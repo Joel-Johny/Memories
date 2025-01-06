@@ -1,0 +1,17 @@
+{
+  "name": "memories",
+  "version": "1.0.0",
+  "description": "This is the backend of the memories project",
+  "main": "./src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
+  },
+  "author": "joel",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.9.3"
+  }
+}
