@@ -1,4 +1,4 @@
-// controllers/userController.js
+// this file contains the crud for users just for practice
 const User = require("../models/User");
 
 // Fetch all users

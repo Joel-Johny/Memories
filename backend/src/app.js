@@ -2,7 +2,8 @@ const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const userRoutes = require("./routes/userRoutes");
-
+const authRoutes = require("./routes/authRoutes");
+const journalRoutes = require("./routes/journalRoutes");
 dotenv.config(); // Load environment variables
 
 const app = express();
@@ -25,6 +26,9 @@ app.post("/test-post-data", (req, res) => {
   res.send("Data received");
 });
 app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/journals", journalRoutes);
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
