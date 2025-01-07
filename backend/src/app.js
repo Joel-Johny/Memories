@@ -1,6 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
-const mongoose = require("mongoose");
+const connectDB = require("./config/db");
+const userRoutes = require("./routes/userRoutes");
 
 dotenv.config(); // Load environment variables
 
@@ -13,16 +14,9 @@ app.use(express.text()); // Parse incoming text data
 app.use(express.urlencoded({ extended: true })); // Parse incoming URL-encoded form-data
 
 // Connect to MongoDB
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
-
+connectDB();
 // Basic Route
-app.get("//test-get-data", (req, res) => {
+app.get("/test-get-data", (req, res) => {
   res.send("API is running...");
 });
 
@@ -30,6 +24,7 @@ app.post("/test-post-data", (req, res) => {
   console.log(req.body); // Will log: undefined
   res.send("Data received");
 });
+app.use("/api/users", userRoutes);
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
