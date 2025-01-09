@@ -1,12 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { PlusIcon, BookOpenIcon } from "@heroicons/react/24/outline";
+import { BookOpenIcon } from "@heroicons/react/24/outline";
 const Navbar = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
   return (
     <header className="bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -27,7 +24,6 @@ const Navbar = () => {
             {user ? (
               <>
                 {/* User Greeting and Logout */}
-                <span className="text-gray-700">Welcome, {user.name}</span>
                 <button
                   onClick={logout}
                   className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"

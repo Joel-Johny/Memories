@@ -3,13 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Calendar from "react-calendar";
 import { format } from "date-fns";
-import {
-  PlusIcon,
-  BookOpenIcon,
-  MagnifyingGlassIcon,
-  CalendarIcon,
-} from "@heroicons/react/24/outline";
-
+import { BookOpenIcon, CalendarIcon } from "@heroicons/react/24/outline";
+import MemorySearch from "../components/MemorySearch";
+import { useAuth } from "../context/AuthContext";
 // Dummy data for demonstration
 const dummyMemories = [
   {
@@ -36,7 +32,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [showCalendar, setShowCalendar] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
+  const { user } = useAuth();
   const MemoryCard = ({ memory }) => (
     <motion.div
       whileHover={{ scale: 1.02 }}
@@ -69,14 +65,20 @@ export default function Dashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* New Memory Button (Visible when logged in) */}
+        {/* // Option 1 - Simple but elegant */}
+        <div className="mb-8">
+          <span className="text-gray-700 font-medium text-lg">
+            Welcome, <span className="text-blue-600">{user.name}</span>
+          </span>
+        </div>
 
         {/* Stats and Calendar Button */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center gap-4">
               <BookOpenIcon className="h-8 w-8 text-blue-600" />
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800">
+              <div className="flex items-center gap-4 sm:block">
+                <h3 className="text-xl font-semibold text-gray-800">
                   Total Memories
                 </h3>
                 <p className="text-3xl font-bold text-blue-600">42</p>
@@ -86,8 +88,8 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center gap-4">
               <CalendarIcon className="h-8 w-8 text-green-600" />
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800">
+              <div className="flex items-center gap-4 sm:block">
+                <h3 className="text-xl font-semibold text-gray-800">
                   This Month
                 </h3>
                 <p className="text-3xl font-bold text-green-600">12</p>
@@ -97,8 +99,8 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center gap-4">
               <span className="text-3xl">😊</span>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800">
+              <div className="flex items-center gap-4 sm:block">
+                <h3 className="text-xl font-semibold text-gray-800">
                   Happy Days
                 </h3>
                 <p className="text-3xl font-bold text-yellow-600">28</p>
@@ -106,39 +108,13 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-
         {/* Search and Calendar Navigation */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-          <div className="relative w-full">
-            <input
-              type="text"
-              placeholder="Search memories..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <button
-              onClick={() => setShowCalendar(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 text-sm md:text-base font-medium rounded-lg hover:bg-gray-200 transition-all"
-            >
-              <CalendarIcon className="h-5 w-5 md:h-6 md:w-6" />
-              Go to Memory
-            </button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate("/new-memory")}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-sm md:text-base font-medium rounded-lg hover:bg-blue-700 transition-all"
-            >
-              <PlusIcon className="h-5 w-5 md:h-6 md:w-6" />
-              Create a Memory
-            </motion.button>
-          </div>
-        </div>
-
+        <MemorySearch
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          setShowCalendar={setShowCalendar}
+          navigate={navigate}
+        />
         {/* Calendar Modal */}
         {showCalendar && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -160,7 +136,6 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-
         {/* Recent Memories */}
         <div>
           <h2 className="text-xl font-semibold text-gray-800 mb-6">
