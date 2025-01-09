@@ -32,7 +32,6 @@ export const AuthProvider = ({ children }) => {
       // console.log("verification done");
 
       setUser(response.data);
-      navigate("/dashboard");
     } catch (error) {
       // console.log("Something went wrong executing catch block :", error);
       localStorage.removeItem("token");

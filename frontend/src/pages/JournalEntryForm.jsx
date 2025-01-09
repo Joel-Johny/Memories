@@ -185,6 +185,7 @@ const JournalEntryForm = () => {
             </div>
           )}
 
+          {/* Journal Title */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Title
@@ -198,7 +199,7 @@ const JournalEntryForm = () => {
               required
             />
           </div>
-
+          {/* Journal Description Component */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               How was your day?
@@ -385,6 +386,7 @@ const JournalEntryForm = () => {
               <span>10</span>
             </div>
           </div>
+
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               "How was your day, if it were an emoji?"

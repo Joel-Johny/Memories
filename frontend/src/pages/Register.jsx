@@ -11,8 +11,9 @@ const Register = () => {
     confirmPassword: "",
   });
   const [error, setError] = useState("");
-  const { register } = useAuth();
+  const { register, user } = useAuth();
   const navigate = useNavigate();
+  if (user) navigate("/dashboard");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

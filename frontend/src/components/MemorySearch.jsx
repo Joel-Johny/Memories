@@ -1,7 +1,8 @@
 import { PlusIcon, CalendarIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
-
+import { useNavigate } from "react-router-dom";
 const MemorySearch = ({ searchQuery, setSearchQuery, setShowCalendar }) => {
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-6">
       <div className="relative flex-1 min-w-0">
