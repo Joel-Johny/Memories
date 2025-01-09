@@ -11,13 +11,10 @@ const Login = () => {
   const navigate = useNavigate();
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submiting");
     try {
       await login(email, password);
-      console.log("done now navigating");
       navigate("/dashboard");
     } catch (err) {
-      console.log("something went worng");
       setError(err.message);
     }
   };

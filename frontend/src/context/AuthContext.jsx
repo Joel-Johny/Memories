@@ -1,14 +1,17 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    // console.log("Auth provider reinitialized");
     if (token) {
       // Verify token and set user
       verifyToken(token);
@@ -18,6 +21,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const verifyToken = async (token) => {
+    // console.log("calling verify");
     try {
       const response = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`,
@@ -25,8 +29,12 @@ export const AuthProvider = ({ children }) => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+      // console.log("verification done");
+
       setUser(response.data);
+      navigate("/dashboard");
     } catch (error) {
+      // console.log("Something went wrong executing catch block :", error);
       localStorage.removeItem("token");
     } finally {
       setLoading(false);
@@ -40,9 +48,8 @@ export const AuthProvider = ({ children }) => {
         { email, password }
       );
       const { token, user } = response.data;
-      console.log(token, user);
       localStorage.setItem("token", token);
-      setUser(token);
+      setUser(user);
       return true;
     } catch (error) {
       throw new Error(error.response?.data?.message || "Login failed");
