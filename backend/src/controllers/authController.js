@@ -62,10 +62,21 @@ const loginUser = async (req, res) => {
     res.status(200).json({
       message: "User logged in successfully",
       token,
+      user: user.name,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
 
-module.exports = { registerUser, loginUser };
+const verifyUser = async (req, res) => {
+  try {
+    console.log("Verifiying");
+    const user = await User.findById(req.user.id);
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, verifyUser };

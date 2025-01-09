@@ -1,24 +1,32 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-
+import React from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { PlusIcon, BookOpenIcon } from "@heroicons/react/24/outline";
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
-    <nav className="bg-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <Link to="/" className="text-xl font-bold text-blue-600">
-                Memories
-              </Link>
-            </div>
-          </div>
+    <header className="bg-white shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex justify-between items-center">
+          {/* Brand Logo */}
           <div className="flex items-center">
+            <Link
+              to="/"
+              className="flex items-center gap-3 text-xl font-bold text-blue-600"
+            >
+              <BookOpenIcon className="h-8 w-8 text-blue-600" />
+              <h1 className="text-2xl font-bold text-gray-900">Memories</h1>
+            </Link>
+          </div>
+
+          {/* Conditional Actions */}
+          <div className="flex items-center space-x-4">
             {user ? (
-              <div className="flex items-center space-x-4">
+              <>
+                {/* User Greeting and Logout */}
                 <span className="text-gray-700">Welcome, {user.name}</span>
                 <button
                   onClick={logout}
@@ -26,13 +34,11 @@ const Navbar = () => {
                 >
                   Logout
                 </button>
-              </div>
+              </>
             ) : (
-              <div className="space-x-4">
-                <Link
-                  to="/login"
-                  className="text-gray-700 hover:text-gray-900"
-                >
+              <>
+                {/* Login and Register Links (Visible when not logged in) */}
+                <Link to="/login" className="text-gray-700 hover:text-gray-900">
                   Login
                 </Link>
                 <Link
@@ -41,12 +47,12 @@ const Navbar = () => {
                 >
                   Register
                 </Link>
-              </div>
+              </>
             )}
           </div>
         </div>
       </div>
-    </nav>
+    </header>
   );
 };
 
