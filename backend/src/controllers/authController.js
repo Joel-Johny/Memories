@@ -74,11 +74,10 @@ const loginUser = async (req, res) => {
 
 const verifyUser = async (req, res) => {
   try {
-    console.log("Verifiying");
-    const user = await User.findById(req.user.id);
+    // console.log("Verification done by the auth middleware protect");
     const userDetails = {
-      name: user.name,
-      email: user.email,
+      name: req.user.name,
+      email: req.user.email,
     };
     res.status(200).json(userDetails);
   } catch (error) {

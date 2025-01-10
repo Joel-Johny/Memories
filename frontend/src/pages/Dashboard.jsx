@@ -6,12 +6,14 @@ import { format } from "date-fns";
 import { BookOpenIcon, CalendarIcon } from "@heroicons/react/24/outline";
 import MemorySearch from "../components/MemorySearch";
 import { useAuth } from "../context/AuthContext";
+import "react-calendar/dist/Calendar.css";
+
 // Dummy data for demonstration
 const dummyMemories = [
   {
     id: 1,
     title: "Morning Reflection",
-    date: "2024-01-15",
+    date: "2025-01-09",
     mood: "😊",
     preview: "Today was a productive day filled with...",
     thumbnail:
@@ -20,19 +22,49 @@ const dummyMemories = [
   {
     id: 2,
     title: "Evening Thoughts",
-    date: "2024-01-14",
+    date: "2025-01-04",
     mood: "😌",
     preview: "Spent some quality time with family...",
     thumbnail:
       "https://images.unsplash.com/photo-1735657061829-fc1b934035f9?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
+  // ... (keep other dummy memories)
 ];
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = useAuth();
+
+  // Function to check if a date has a journal entry
+  const hasJournal = (date) => {
+    const formattedDate = format(date, "yyyy-MM-dd");
+    return dummyMemories.some((memory) => memory.date === formattedDate);
+  };
+
+  // Custom tile class for the calendar
+  const tileClassName = ({ date, view }) => {
+    if (view === "month") {
+      // Disable future dates
+      if (date > new Date()) {
+        return "opacity-25 cursor-not-allowed";
+      }
+      // Highlight dates with journal entries
+      if (hasJournal(date)) {
+        return "bg-blue-100 text-blue-800 font-medium hover:bg-blue-200";
+      }
+      // Style for dates without entries
+      return "text-gray-400";
+    }
+  };
+
+  // Disable tile function
+  const tileDisabled = ({ date }) => {
+    return date > new Date() || !hasJournal(date);
+  };
+
   const MemoryCard = ({ memory }) => (
     <motion.div
       whileHover={{ scale: 1.02 }}
@@ -64,11 +96,9 @@ export default function Dashboard() {
       {/* Main Content */}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* New Memory Button (Visible when logged in) */}
-        {/* // Option 1 - Simple but elegant */}
-        <div className="mb-8">
+        <div className="mb-8 text-right">
           <span className="text-gray-700 font-medium text-lg">
-            Welcome, <span className="text-blue-600">{user.name}</span>
+            Welcome, <span className="text-blue-600">{user?.name}</span>
           </span>
         </div>
 
@@ -81,7 +111,9 @@ export default function Dashboard() {
                 <h3 className="text-xl font-semibold text-gray-800">
                   Total Memories
                 </h3>
-                <p className="text-3xl font-bold text-blue-600">42</p>
+                <p className="text-3xl font-bold text-blue-600">
+                  {dummyMemories.length}
+                </p>
               </div>
             </div>
           </div>
@@ -117,25 +149,53 @@ export default function Dashboard() {
         />
         {/* Calendar Modal */}
         {showCalendar && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl p-6 max-w-md w-full">
               <h3 className="text-lg font-semibold mb-4">Select a Date</h3>
               <Calendar
-                onChange={(date) => {
-                  setShowCalendar(false);
-                  navigate(`/memories/${format(date, "yyyy-MM-dd")}`);
-                }}
-                className="w-full"
+                onChange={setSelectedDate}
+                value={selectedDate}
+                tileClassName={tileClassName}
+                tileDisabled={tileDisabled}
+                maxDate={new Date()}
+                minDetail="month"
+                className="w-full border-0 shadow-sm rounded-lg"
+                navigationLabel={({ date }) => format(date, "MMMM yyyy")}
+                formatShortWeekday={(locale, date) => format(date, "EEE")}
               />
-              <button
-                onClick={() => setShowCalendar(false)}
-                className="mt-4 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Close
-              </button>
+              <div className="mt-4 flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setSelectedDate(null);
+                    setShowCalendar(false);
+                  }}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (selectedDate && hasJournal(selectedDate)) {
+                      setShowCalendar(false);
+                      navigate(
+                        `/memories/${format(selectedDate, "yyyy-MM-dd")}`
+                      );
+                    }
+                  }}
+                  disabled={!selectedDate || !hasJournal(selectedDate)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    selectedDate && hasJournal(selectedDate)
+                      ? "bg-blue-600 text-white hover:bg-blue-700"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  View Journal
+                </button>
+              </div>
             </div>
           </div>
         )}
+
         {/* Recent Memories */}
         <div>
           <h2 className="text-xl font-semibold text-gray-800 mb-6">
