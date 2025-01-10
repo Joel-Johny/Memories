@@ -31,7 +31,7 @@ const Register = () => {
         email: formData.email,
         password: formData.password,
       });
-      navigate("/journal");
+      navigate("/login");
     } catch (err) {
       setError(err.message);
     }
