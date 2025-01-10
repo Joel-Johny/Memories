@@ -79,6 +79,7 @@ const verifyUser = async (req, res) => {
       name: req.user.name,
       email: req.user.email,
     };
+    // console.log(req.user);
     res.status(200).json(userDetails);
   } catch (error) {
     console.log(error);

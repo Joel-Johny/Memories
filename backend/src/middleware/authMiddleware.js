@@ -19,7 +19,9 @@ const protect = async (req, res, next) => {
       // Get user from token and attach it to the request object
       req.user = await User.findById(decoded.id).select("-password"); // Exclude password
       // console.log(token, decoded, req.user);
-
+      if (!req.user) {
+        return res.status(401).json({ message: "User not found" });
+      }
       next(); // Continue to the next middleware or route handler
     } catch (error) {
       res.status(401).json({ message: "Not authorized, token failed" });
