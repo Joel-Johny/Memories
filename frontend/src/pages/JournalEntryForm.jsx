@@ -7,25 +7,32 @@ import MoodPicker from "../components/MoodPicker";
 import TitleNThumbnail from "../components/TitleNThumbnail";
 import DayDescription from "../components/DayDescription";
 const JournalEntryForm = () => {
+  //States for journal Title and Thumbnail
   const [title, setTitle] = useState("");
+  const [thumbnail, setThumbnail] = useState(null);
+
+  //States for journal Description Audio/Video/Text
   const [textContent, setTextContent] = useState("");
   const [selectedTab, setSelectedTab] = useState(0);
-  const [thumbnail, setThumbnail] = useState(null);
   const [mediaFile, setMediaFile] = useState(null);
   const [recordingType, setRecordingType] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [snapPhotos, setSnapPhotos] = useState([]);
-  const [productivityRating, setProductivityRating] = useState(5);
-  const [selectedMood, setSelectedMood] = useState(null);
-  const [error, setError] = useState("");
   const [showPreview, setShowPreview] = useState(false);
-
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const fileInputRef = useRef(null);
   const videoPreviewRef = useRef(null);
   const mediaStreamRef = useRef(null);
+
+  //State for journal Snapshot
+  const [snapPhotos, setSnapPhotos] = useState([]);
+  //States for journal Productivity and Mood
+  const [productivityRating, setProductivityRating] = useState(5);
+  const [selectedMood, setSelectedMood] = useState(null);
+
+  //State for Error which will be used for recording error or api errors
+  const [error, setError] = useState("");
 
   useEffect(() => {
     return () => {

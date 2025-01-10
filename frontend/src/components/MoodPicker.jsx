@@ -21,12 +21,12 @@ const MoodPicker = ({ selectedMood, setSelectedMood }) => {
         {moods.map((mood) => (
           <motion.button
             key={mood.label}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.9 }}
             type="button"
             onClick={() => setSelectedMood(mood)}
             aria-pressed={selectedMood?.label === mood.label}
-            className={`p-3 sm:p-4 rounded-lg text-center transition-transform duration-200 ease-in-out 
+            className={`p-2 sm:p-3 rounded-lg text-center transition-transform duration-200 ease-in-out 
   ${
     selectedMood?.label === mood.label
       ? "bg-blue-100 border-2 border-blue-500 shadow-md transform scale-105"
