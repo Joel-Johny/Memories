@@ -23,6 +23,28 @@ const DayDescription = ({
   showPreview,
   videoPreviewRef,
 }) => {
+  const liveVideoRef = React.useRef(null);
+  const [isPreviewing, setIsPreviewing] = React.useState(false);
+
+  const finalRecordedVideoRef = React.useRef(null);
+  const [finishedRecording, setFinishedRecording] = React.useState(false);
+
+  console.log(liveVideoRef, finalRecordedVideoRef);
+  async function startVideoRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+      if (liveVideoRef.current) {
+        liveVideoRef.current.srcObject = stream; // Set stream to the video element
+        setIsPreviewing(true); // Trigger React to show the live preview
+      }
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+    }
+  }
+
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700">
@@ -106,8 +128,11 @@ const DayDescription = ({
                   <Tab.Panel>
                     <div className="space-y-4">
                       {/* Preview Area */}
-                      {!showPreview && !mediaFile && (
-                        <div className="relative group">
+                      {!isPreviewing && !finishedRecording && (
+                        <div
+                          className="relative group cursor-pointer"
+                          onClick={startVideoRecording}
+                        >
                           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 aspect-video transition-all duration-200 group-hover:border-blue-500">
                             <div className="flex flex-col items-center justify-center h-full space-y-3">
                               <div className="p-3 bg-blue-50 rounded-full group-hover:bg-blue-100 transition-colors duration-200">
@@ -127,31 +152,36 @@ const DayDescription = ({
                       )}
 
                       {/* Live Preview */}
-                      {showPreview && (
-                        <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
-                          <video
-                            ref={videoPreviewRef}
-                            autoPlay
-                            playsInline
-                            muted
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
+
+                      <div
+                        className={`relative rounded-lg overflow-hidden bg-black aspect-video ${
+                          isPreviewing ? "" : "hidden"
+                        }`}
+                      >
+                        <video
+                          ref={liveVideoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className={`w-full h-full object-cover `}
+                        />
+                      </div>
 
                       {/* Recorded Video Playback */}
-                      {mediaFile && !isRecording && (
-                        <div className="rounded-lg overflow-hidden bg-black aspect-video">
-                          <video
-                            src={mediaFile}
-                            controls
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
+                      <div
+                        className={`rounded-lg overflow-hidden bg-black aspect-video
+                        ${finishedRecording ? "" : "hidden"}
+                        `}
+                      >
+                        <video
+                          src={mediaFile}
+                          controls
+                          className={`w-full h-full object-cover`}
+                        />
+                      </div>
 
                       {/* Control Buttons */}
-                      <div className="flex justify-start">
+                      {/* <div className="flex justify-start">
                         {!isRecording ? (
                           <motion.button
                             whileHover={{ scale: 1.02 }}
@@ -161,7 +191,7 @@ const DayDescription = ({
                             className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
                           >
                             <VideoCameraIcon className="w-5 h-5 mr-2" />
-                            Record Video
+                            Start
                           </motion.button>
                         ) : (
                           <div className="flex gap-2">
@@ -197,7 +227,7 @@ const DayDescription = ({
                             </motion.button>
                           </div>
                         )}
-                      </div>
+                      </div> */}
                     </div>
                   </Tab.Panel>
 
