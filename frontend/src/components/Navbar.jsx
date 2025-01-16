@@ -11,7 +11,7 @@ const Navbar = () => {
           {/* Brand Logo */}
           <div className="flex items-center">
             <Link
-              to="/"
+              to="/dashboard"
               className="flex items-center gap-3 text-xl font-bold text-blue-600"
             >
               <BookOpenIcon className="h-8 w-8 text-blue-600" />

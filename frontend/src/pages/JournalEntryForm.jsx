@@ -19,7 +19,10 @@ const JournalEntryForm = () => {
   const [snapPhotos, setSnapPhotos] = useState([]);
   //States for journal Productivity and Mood
   const [productivityRating, setProductivityRating] = useState(5);
-  const [selectedMood, setSelectedMood] = useState(null);
+  const [selectedMood, setSelectedMood] = useState({
+    emoji: "😊",
+    label: "Happy",
+  });
 
   //State for Error which will be used for recording error or api errors
   const [error, setError] = useState("");
@@ -32,6 +35,7 @@ const JournalEntryForm = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45 }}
       className="w-full max-w-4xl mx-auto p-2 sm:p-4"
     >
       <div className="bg-white rounded-lg shadow-lg p-3 sm:p-6">

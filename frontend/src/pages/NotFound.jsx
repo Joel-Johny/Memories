@@ -45,7 +45,7 @@ const NotFound = () => {
             transition={{ delay: 0.8, duration: 0.8 }}
           >
             <Link
-              to="/"
+              to="/dashboard"
               className="inline-block bg-blue-600 text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-blue-700 transform hover:scale-105 transition-all duration-300"
             >
               Return Home
