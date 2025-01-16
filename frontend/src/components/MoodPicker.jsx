@@ -15,7 +15,7 @@ const MoodPicker = ({ selectedMood, setSelectedMood }) => {
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700">
-        "How was your day, if it were an emoji?"
+        How was your day, if it were an emoji?
       </label>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {moods.map((mood) => (

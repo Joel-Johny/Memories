@@ -1,13 +1,19 @@
 import React from "react";
 import { PhotoIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
-const TitleNThumbnail = ({
-  title,
-  setTitle,
-  handleThumbnailUpload,
-  thumbnail,
-  removeThumbnail,
-}) => {
+const TitleNThumbnail = ({ title, setTitle, thumbnail, setThumbnail }) => {
+  const handleThumbnailUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setThumbnail(imageUrl);
+    }
+  };
+
+  const removeThumbnail = () => {
+    setThumbnail(null);
+  };
+
   return (
     <div className="space-y-8">
       {/* Title Input */}
@@ -26,7 +32,7 @@ const TitleNThumbnail = ({
       {/* Thumbnail Upload */}
       <div className="space-y-3">
         <label className="block text-sm font-medium text-gray-700">
-          Thumbnail
+          Memory Thumbnail
         </label>
         <div className="relative">
           {thumbnail ? (

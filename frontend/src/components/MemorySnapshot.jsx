@@ -1,10 +1,15 @@
 import React from "react";
 import { PhotoIcon, XMarkIcon } from "@heroicons/react/24/outline";
-const MemorySnapshot = ({
-  snapPhotos,
-  handleSnapPhotosUpload,
-  removePhoto,
-}) => {
+const MemorySnapshot = ({ snapPhotos, setSnapPhotos }) => {
+  const handleSnapPhotosUpload = (event) => {
+    const files = Array.from(event.target.files);
+    const newPhotos = files.map((file) => URL.createObjectURL(file));
+    setSnapPhotos([...snapPhotos, ...newPhotos]);
+  };
+
+  const removePhoto = (index) => {
+    setSnapPhotos(snapPhotos.filter((_, i) => i !== index));
+  };
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700">

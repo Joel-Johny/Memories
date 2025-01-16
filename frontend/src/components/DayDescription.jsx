@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Tab } from "@headlessui/react";
 import {
   VideoCameraIcon,
@@ -7,44 +7,99 @@ import {
   PauseIcon,
   PlayIcon,
   StopIcon,
+  TrashIcon,
 } from "@heroicons/react/24/outline";
+import { set } from "date-fns";
 const DayDescription = ({
-  textContent,
-  setTextContent,
+  content,
+  setContent,
   selectedTab,
   setSelectedTab,
-  recordingType,
-  isRecording,
-  isPaused,
-  startRecording,
-  pauseResumeRecording,
-  stopRecording,
-  mediaFile,
-  showPreview,
-  videoPreviewRef,
+  setError,
 }) => {
-  const liveVideoRef = React.useRef(null);
-  const [isPreviewing, setIsPreviewing] = React.useState(false);
+  const liveVideoRef = useRef(null);
 
-  const finalRecordedVideoRef = React.useRef(null);
-  const [finishedRecording, setFinishedRecording] = React.useState(false);
+  const [isVideoRecorded, setIsVideoRecorded] = useState(false);
+  const [videoRecordingState, setVideoRecordingState] = useState("inactive");
 
-  console.log(liveVideoRef, finalRecordedVideoRef);
+  const recordedVideoRef = React.useRef(null);
+
+  const [videoRecorder, setVideoRecorder] = useState(null);
+  const [recordedChunks, setRecordedChunks] = useState([]); // Store recorded video chunks
+
+  const stopStream = (stream) => {
+    stream.getTracks().forEach((track) => track.stop());
+  };
+
+  useEffect(() => {
+    return () => {
+      if (videoRecorder) {
+        stopStream(videoRecorder.stream);
+      }
+      // elseif(audioRecorder){
+      //   stopStream(audioRecorder.stream);
+      // }
+    };
+  }, []);
+
   async function startVideoRecording() {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const videoStream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true,
       });
-      if (liveVideoRef.current) {
-        liveVideoRef.current.srcObject = stream; // Set stream to the video element
-        setIsPreviewing(true); // Trigger React to show the live preview
-      }
+      liveVideoRef.current.srcObject = videoStream;
+
+      const videoRecorder = new MediaRecorder(videoStream);
+      // console.log("State : ", videoRecorder.state);
+
+      setVideoRecorder(videoRecorder);
+      videoRecorder.ondataavailable = (event) => {
+        setRecordedChunks((prevChunks) => [...prevChunks, event.data]);
+      };
+
+      videoRecorder.start(200);
+      // console.log("Recording started...");
+      setVideoRecordingState("recording");
+      // console.log("State : ", videoRecorder.state);
     } catch (error) {
+      setError(error);
       console.error("Error accessing camera:", error);
     }
   }
 
+  function pauseOrResumeVideoRecording() {
+    if (videoRecordingState === "recording") {
+      videoRecorder.pause();
+      setVideoRecordingState("paused");
+    } else if (videoRecordingState === "paused") {
+      videoRecorder.resume();
+      setVideoRecordingState("recording");
+    }
+  }
+  function stopVideoRecording() {
+    videoRecorder.onstop = () => {
+      // console.log("This is recorded CHunks", recordedChunks);
+      const recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
+      recordedVideoRef.current.src = URL.createObjectURL(recordedBlob);
+      setVideoRecordingState("inactive");
+      setContent({ type: "video/webm", payload: recordedBlob });
+      setIsVideoRecorded(true);
+      setRecordedChunks([]);
+    };
+    stopStream(liveVideoRef.current.srcObject);
+    videoRecorder.stop();
+    // console.log("Recording stopped.");
+    // console.log(videoRecorder.state);
+  }
+
+  function deleteVideoRecording() {
+    // console.log("deleting");
+    recordedVideoRef.current.src = null;
+    setIsVideoRecorded(false);
+    setVideoRecordingState("inactive");
+    setRecordedChunks([]);
+  }
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700">
@@ -80,8 +135,10 @@ const DayDescription = ({
         <Tab.Panels className="mt-4">
           <Tab.Panel>
             <textarea
-              value={textContent}
-              onChange={(e) => setTextContent(e.target.value)}
+              value={content.payload}
+              onChange={(e) =>
+                setContent({ type: "text", payload: e.target.value })
+              }
               placeholder="Write about your day..."
               rows={6}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
@@ -128,34 +185,36 @@ const DayDescription = ({
                   <Tab.Panel>
                     <div className="space-y-4">
                       {/* Preview Area */}
-                      {!isPreviewing && !finishedRecording && (
-                        <div
-                          className="relative group cursor-pointer"
-                          onClick={startVideoRecording}
-                        >
-                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 aspect-video transition-all duration-200 group-hover:border-blue-500">
-                            <div className="flex flex-col items-center justify-center h-full space-y-3">
-                              <div className="p-3 bg-blue-50 rounded-full group-hover:bg-blue-100 transition-colors duration-200">
-                                <VideoCameraIcon className="w-8 h-8 text-blue-600" />
-                              </div>
-                              <div className="text-center">
-                                <p className="text-sm font-medium text-blue-600">
-                                  Video Preview
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Click record to start capturing
-                                </p>
+                      {!isVideoRecorded &&
+                        videoRecordingState === "inactive" && (
+                          <div
+                            className="relative group cursor-pointer"
+                            onClick={startVideoRecording}
+                          >
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 aspect-video transition-all duration-200 group-hover:border-blue-500">
+                              <div className="flex flex-col items-center justify-center h-full space-y-3">
+                                <div className="p-3 bg-blue-50 rounded-full group-hover:bg-blue-100 transition-colors duration-200">
+                                  <VideoCameraIcon className="w-8 h-8 text-blue-600" />
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-sm font-medium text-blue-600">
+                                    Video Preview
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Click record to start capturing
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      )}
-
+                        )}
                       {/* Live Preview */}
-
                       <div
                         className={`relative rounded-lg overflow-hidden bg-black aspect-video ${
-                          isPreviewing ? "" : "hidden"
+                          videoRecordingState === "recording" ||
+                          videoRecordingState === "paused"
+                            ? ""
+                            : "hidden"
                         }`}
                       >
                         <video
@@ -167,42 +226,19 @@ const DayDescription = ({
                         />
                       </div>
 
-                      {/* Recorded Video Playback */}
-                      <div
-                        className={`rounded-lg overflow-hidden bg-black aspect-video
-                        ${finishedRecording ? "" : "hidden"}
-                        `}
-                      >
-                        <video
-                          src={mediaFile}
-                          controls
-                          className={`w-full h-full object-cover`}
-                        />
-                      </div>
-
                       {/* Control Buttons */}
-                      {/* <div className="flex justify-start">
-                        {!isRecording ? (
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            type="button"
-                            onClick={() => startRecording("video")}
-                            className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                          >
-                            <VideoCameraIcon className="w-5 h-5 mr-2" />
-                            Start
-                          </motion.button>
-                        ) : (
+                      {(videoRecordingState === "recording" ||
+                        videoRecordingState === "paused") && (
+                        <div className="flex justify-start">
                           <div className="flex gap-2">
                             <motion.button
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
                               type="button"
-                              onClick={pauseResumeRecording}
+                              onClick={pauseOrResumeVideoRecording}
                               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                             >
-                              {isPaused ? (
+                              {videoRecordingState === "paused" ? (
                                 <>
                                   <PlayIcon className="w-5 h-5 mr-2" />
                                   Resume
@@ -219,20 +255,45 @@ const DayDescription = ({
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
                               type="button"
-                              onClick={stopRecording}
+                              onClick={stopVideoRecording}
                               className="flex items-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
                             >
                               <StopIcon className="w-5 h-5 mr-2" />
                               Stop Recording
                             </motion.button>
                           </div>
-                        )}
-                      </div> */}
+                        </div>
+                      )}
+
+                      {/* Final Recorded Video Playback */}
+                      <div
+                        className={`rounded-lg overflow-hidden bg-black aspect-video
+                        ${isVideoRecorded ? "" : "hidden"}
+                        `}
+                      >
+                        <video
+                          controls
+                          ref={recordedVideoRef}
+                          className={`w-full h-full object-cover`}
+                        />
+                      </div>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        type="button"
+                        onClick={deleteVideoRecording}
+                        className={`flex items-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 ${
+                          isVideoRecorded ? "" : "hidden"
+                        }`}
+                      >
+                        <TrashIcon className="w-5 h-5 mr-2" />
+                        Delete
+                      </motion.button>
                     </div>
                   </Tab.Panel>
 
                   {/* Audio Tab Panel */}
-                  <Tab.Panel>
+                  {/* <Tab.Panel>
                     <div className="space-y-4">
                       <div className="flex justify-start">
                         {!isRecording ? (
@@ -294,7 +355,7 @@ const DayDescription = ({
                           </div>
                         )}
                     </div>
-                  </Tab.Panel>
+                  </Tab.Panel> */}
                 </Tab.Panels>
               </Tab.Group>
             </div>

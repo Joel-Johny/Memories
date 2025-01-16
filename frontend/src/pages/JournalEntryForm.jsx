@@ -12,18 +12,8 @@ const JournalEntryForm = () => {
   const [thumbnail, setThumbnail] = useState(null);
 
   //States for journal Description Audio/Video/Text
-  const [textContent, setTextContent] = useState("");
+  const [content, setContent] = useState({ type: "", payload: "" });
   const [selectedTab, setSelectedTab] = useState(0);
-  const [mediaFile, setMediaFile] = useState(null);
-  const [recordingType, setRecordingType] = useState(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const mediaRecorderRef = useRef(null);
-  const streamRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const videoPreviewRef = useRef(null);
-  const mediaStreamRef = useRef(null);
 
   //State for journal Snapshot
   const [snapPhotos, setSnapPhotos] = useState([]);
@@ -34,122 +24,8 @@ const JournalEntryForm = () => {
   //State for Error which will be used for recording error or api errors
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    return () => {
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
-
-  const startVideoPreview = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-      mediaStreamRef.current = stream;
-      if (videoPreviewRef.current) {
-        videoPreviewRef.current.srcObject = stream;
-      }
-      setShowPreview(true);
-    } catch (err) {
-      setError("Unable to access camera");
-    }
-  };
-
-  const stopVideoPreview = () => {
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-    }
-    setShowPreview(false);
-  };
-
-  const startRecording = async (type) => {
-    try {
-      if (type === "video") {
-        await startVideoPreview();
-      }
-      const constraints =
-        type === "video" ? { video: true, audio: true } : { audio: true };
-
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      streamRef.current = stream;
-      mediaRecorderRef.current = new MediaRecorder(stream);
-
-      const chunks = [];
-      mediaRecorderRef.current.ondataavailable = (e) => chunks.push(e.data);
-      mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunks, {
-          type: type === "video" ? "video/webm" : "audio/webm",
-        });
-        setMediaFile(URL.createObjectURL(blob));
-        stopVideoPreview();
-      };
-
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-      setIsPaused(false);
-      setRecordingType(type);
-    } catch (err) {
-      setError("Unable to access recording device");
-    }
-  };
-
-  const pauseResumeRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      if (isPaused) {
-        mediaRecorderRef.current.resume();
-      } else {
-        mediaRecorderRef.current.pause();
-      }
-      setIsPaused(!isPaused);
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      setIsRecording(false);
-      setIsPaused(false);
-      stopVideoPreview();
-    }
-  };
-
-  const handleThumbnailUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setThumbnail(imageUrl);
-    }
-  };
-
-  const removeThumbnail = () => {
-    setThumbnail(null);
-  };
-
-  const handleSnapPhotosUpload = (event) => {
-    const files = Array.from(event.target.files);
-    const newPhotos = files.map((file) => URL.createObjectURL(file));
-    setSnapPhotos([...snapPhotos, ...newPhotos]);
-  };
-
-  const removePhoto = (index) => {
-    setSnapPhotos(snapPhotos.filter((_, i) => i !== index));
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log({
-      title,
-      textContent,
-      mediaFile,
-      snapPhotos,
-      productivityRating,
-      selectedMood,
-      thumbnail,
-    });
   };
 
   return (
@@ -174,33 +50,23 @@ const JournalEntryForm = () => {
           <TitleNThumbnail
             title={title}
             setTitle={setTitle}
-            handleThumbnailUpload={handleThumbnailUpload}
             thumbnail={thumbnail}
-            removeThumbnail={removeThumbnail}
+            setThumbnail={setThumbnail}
           />
 
           {/* Journal Description Component */}
           <DayDescription
-            textContent={textContent}
-            setTextContent={setTextContent}
+            content={content}
+            setContent={setContent}
             selectedTab={selectedTab}
             setSelectedTab={setSelectedTab}
-            recordingType={recordingType}
-            isRecording={isRecording}
-            isPaused={isPaused}
-            startRecording={startRecording}
-            pauseResumeRecording={pauseResumeRecording}
-            stopRecording={stopRecording}
-            mediaFile={mediaFile}
-            videoPreviewRef={videoPreviewRef}
-            showPreview={showPreview}
+            setError={setError}
           />
 
           {/*Memory Snap Upload */}
           <MemorySnapshot
             snapPhotos={snapPhotos}
-            handleSnapPhotosUpload={handleSnapPhotosUpload}
-            removePhoto={removePhoto}
+            setSnapPhotos={setSnapPhotos}
           />
 
           {/*Productivity Slider*/}
