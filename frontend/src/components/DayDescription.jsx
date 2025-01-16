@@ -9,7 +9,6 @@ import {
   StopIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
-import { set } from "date-fns";
 const DayDescription = ({
   content,
   setContent,
@@ -41,7 +40,32 @@ const DayDescription = ({
       // }
     };
   }, []);
+  const handleMainTabChange = (index) => {
+    setSelectedTab(index);
+    reinitializeVideoRecorder();
+  };
 
+  // Add another function to handle recording type tab changes
+  const handleRecordingTypeChange = (index) => {
+    // Reset content and recording states when switching between Video and Audio
+    reinitializeVideoRecorder();
+  };
+
+  function reinitializeVideoRecorder() {
+    setContent({ type: "", payload: "" });
+    if (videoRecorder) {
+      stopStream(liveVideoRef.current.srcObject);
+      videoRecorder.stop();
+    }
+    setVideoRecorder(null);
+    setRecordedChunks([]);
+    if (recordedVideoRef.current) {
+      recordedVideoRef.current.src = null;
+    }
+    setIsVideoRecorded(false);
+    setVideoRecordingState("inactive");
+  }
+  // Functions to Start / Stop /Resume Recording
   async function startVideoRecording() {
     try {
       const videoStream = await navigator.mediaDevices.getUserMedia({
@@ -105,7 +129,7 @@ const DayDescription = ({
       <label className="block text-sm font-medium text-gray-700">
         How was your day?
       </label>
-      <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
+      <Tab.Group selectedIndex={selectedTab} onChange={handleMainTabChange}>
         <Tab.List className="flex space-x-2 rounded-xl bg-gray-100 p-1">
           <Tab
             className={({ selected }) =>
@@ -146,7 +170,7 @@ const DayDescription = ({
           </Tab.Panel>
           <Tab.Panel>
             <div className="space-y-4">
-              <Tab.Group>
+              <Tab.Group onChange={handleRecordingTypeChange}>
                 <Tab.List className="flex flex-col sm:flex-col md:inline-flex md:flex-row rounded-lg bg-gray-100 p-1 mt-5 w-full md:w-auto">
                   <Tab
                     className={({ selected }) =>
