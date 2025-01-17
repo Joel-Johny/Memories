@@ -12,7 +12,7 @@ const JournalEntryForm = () => {
   const [thumbnail, setThumbnail] = useState(null);
 
   //States for journal Description Audio/Video/Text
-  const [content, setContent] = useState({ type: "", payload: "" });
+  const [content, setContent] = useState({ type: "", payload: null });
   const [selectedTab, setSelectedTab] = useState(0);
 
   //State for journal Snapshot
@@ -27,8 +27,25 @@ const JournalEntryForm = () => {
   //State for Error which will be used for recording error or api errors
   const [error, setError] = useState("");
 
+  function validateForm() {
+    if (title.trim() === "") {
+      setError("Journal Title cannot be empty");
+      return false;
+    }
+    if (content.type === "" || content.payload === null) {
+      setError("Journal Description cannot be empty");
+      return false;
+    }
+
+    setError("");
+    return true;
+  }
   const handleSubmit = (e) => {
     e.preventDefault();
+    const isValid = validateForm();
+    if (isValid) {
+      // Handle form submission
+    }
   };
 
   return (

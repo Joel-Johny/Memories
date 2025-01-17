@@ -32,7 +32,7 @@ const MemorySnapshot = ({ snapPhotos, setSnapPhotos }) => {
             </button>
           </div>
         ))}
-        <label className="border-2 border-dashed border-gray-300 rounded-lg p-4 h-32 flex items-center justify-center cursor-pointer hover:border-blue-500">
+        <label className="border-2 border-dashed border-gray-300 rounded-lg p-4 h-32 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors duration-200">
           <input
             type="file"
             accept="image/*"
@@ -41,6 +41,9 @@ const MemorySnapshot = ({ snapPhotos, setSnapPhotos }) => {
             className="hidden"
           />
           <PhotoIcon className="w-8 h-8 text-gray-400" />
+          <p className="mt-2 text-xs text-gray-500 text-center">
+            Click or drag and drop the image here
+          </p>
         </label>
       </div>
     </div>

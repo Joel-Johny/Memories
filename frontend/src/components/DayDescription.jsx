@@ -52,7 +52,7 @@ const DayDescription = ({
   };
 
   function reinitializeVideoRecorder() {
-    setContent({ type: "", payload: "" });
+    setContent({ type: "", payload: null });
     if (videoRecorder) {
       stopStream(liveVideoRef.current.srcObject);
       videoRecorder.stop();
@@ -127,7 +127,7 @@ const DayDescription = ({
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700">
-        How was your day?
+        How was your day?*
       </label>
       <Tab.Group selectedIndex={selectedTab} onChange={handleMainTabChange}>
         <Tab.List className="flex space-x-2 rounded-xl bg-gray-100 p-1">

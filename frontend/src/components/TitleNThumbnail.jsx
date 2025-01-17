@@ -18,7 +18,9 @@ const TitleNThumbnail = ({ title, setTitle, thumbnail, setThumbnail }) => {
     <div className="space-y-8">
       {/* Title Input */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Title</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Title*
+        </label>
         <input
           type="text"
           value={title}
@@ -58,7 +60,7 @@ const TitleNThumbnail = ({ title, setTitle, thumbnail, setThumbnail }) => {
                 onChange={handleThumbnailUpload}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 transition-all duration-200 group-hover:border-blue-500">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 transition-all duration-200 group-hover:border-blue-500 sadasd    asdasdasd as              ">
                 <div className="flex flex-col items-center justify-center space-y-3">
                   <div className="p-3 bg-blue-50 rounded-full group-hover:bg-blue-100 transition-colors duration-200">
                     <PhotoIcon className="w-8 h-8 text-blue-600" />
