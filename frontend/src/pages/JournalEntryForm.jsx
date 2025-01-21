@@ -34,7 +34,7 @@ const JournalEntryForm = () => {
       setError("Journal Title cannot be empty");
       return false;
     }
-    if (content.type === "" || content.payload === null) {
+    if (content.type === "" || content.payload === "") {
       setError("Journal Description cannot be empty");
       return false;
     }
