@@ -14,7 +14,7 @@ const JournalEntryForm = () => {
   const [thumbnail, setThumbnail] = useState(null);
 
   //States for journal Description Audio/Video/Text
-  const [content, setContent] = useState({ type: "", payload: null });
+  const [content, setContent] = useState({ type: "", payload: "" });
   const [selectedTab, setSelectedTab] = useState(0);
 
   //State for journal Snapshot
@@ -46,6 +46,7 @@ const JournalEntryForm = () => {
     e.preventDefault();
     console.log("This is thumbnail", thumbnail);
     console.log("This is snapshots", snapPhotos);
+    console.log("This is video", content);
     const isValid = validateForm();
     if (isValid) {
       // Get current date

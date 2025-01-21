@@ -16,15 +16,20 @@ const DayDescription = ({
   setSelectedTab,
   setError,
 }) => {
+  // Existing video refs and states
   const liveVideoRef = useRef(null);
-
+  const recordedVideoRef = useRef(null);
   const [isVideoRecorded, setIsVideoRecorded] = useState(false);
   const [videoRecordingState, setVideoRecordingState] = useState("inactive");
-
-  const recordedVideoRef = React.useRef(null);
-
   const [videoRecorder, setVideoRecorder] = useState(null);
-  const [recordedChunks, setRecordedChunks] = useState([]); // Store recorded video chunks
+  const [recordedChunks, setRecordedChunks] = useState([]);
+
+  // New audio states
+  const [audioRecorder, setAudioRecorder] = useState(null);
+  const [audioRecordingState, setAudioRecordingState] = useState("inactive");
+  const [audioChunks, setAudioChunks] = useState([]);
+  const [isAudioRecorded, setIsAudioRecorded] = useState(false);
+  const [audioURL, setAudioURL] = useState(null);
 
   const stopStream = (stream) => {
     stream.getTracks().forEach((track) => track.stop());
@@ -35,24 +40,25 @@ const DayDescription = ({
       if (videoRecorder) {
         stopStream(videoRecorder.stream);
       }
-      // elseif(audioRecorder){
-      //   stopStream(audioRecorder.stream);
-      // }
+      if (audioRecorder) {
+        stopStream(audioRecorder.stream);
+      }
     };
   }, []);
+
   const handleMainTabChange = (index) => {
     setSelectedTab(index);
     reinitializeVideoRecorder();
+    reinitializeAudioRecorder();
   };
 
-  // Add another function to handle recording type tab changes
   const handleRecordingTypeChange = (index) => {
-    // Reset content and recording states when switching between Video and Audio
     reinitializeVideoRecorder();
+    reinitializeAudioRecorder();
   };
 
   function reinitializeVideoRecorder() {
-    setContent({ type: "", payload: null });
+    setContent({ type: "", payload: "" });
     if (videoRecorder) {
       stopStream(liveVideoRef.current.srcObject);
       videoRecorder.stop();
@@ -64,6 +70,19 @@ const DayDescription = ({
     }
     setIsVideoRecorded(false);
     setVideoRecordingState("inactive");
+  }
+
+  function reinitializeAudioRecorder() {
+    setContent({ type: "", payload: "" });
+    if (audioRecorder) {
+      stopStream(audioRecorder.stream);
+      audioRecorder.stop();
+    }
+    setAudioRecorder(null);
+    setAudioChunks([]);
+    setAudioURL(null);
+    setIsAudioRecorded(false);
+    setAudioRecordingState("inactive");
   }
   // Functions to Start / Stop /Resume Recording
   async function startVideoRecording() {
@@ -123,6 +142,60 @@ const DayDescription = ({
     setIsVideoRecorded(false);
     setVideoRecordingState("inactive");
     setRecordedChunks([]);
+  }
+  // Audio Recording Functions
+
+  async function startAudioRecording() {
+    try {
+      const audioStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+
+      const recorder = new MediaRecorder(audioStream);
+      setAudioRecorder(recorder);
+
+      recorder.ondataavailable = (event) => {
+        setAudioChunks((prevChunks) => [...prevChunks, event.data]);
+      };
+
+      recorder.start(200);
+      setAudioRecordingState("recording");
+    } catch (error) {
+      setError(error);
+      console.error("Error accessing microphone:", error);
+    }
+  }
+
+  function pauseOrResumeAudioRecording() {
+    if (audioRecordingState === "recording") {
+      audioRecorder.pause();
+      setAudioRecordingState("paused");
+    } else if (audioRecordingState === "paused") {
+      audioRecorder.resume();
+      setAudioRecordingState("recording");
+    }
+  }
+
+  function stopAudioRecording() {
+    audioRecorder.onstop = () => {
+      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      setAudioURL(audioUrl);
+      setContent({ type: "audio/webm", payload: audioBlob });
+      setIsAudioRecorded(true);
+      setAudioChunks([]);
+      setAudioRecordingState("inactive");
+    };
+
+    stopStream(audioRecorder.stream);
+    audioRecorder.stop();
+  }
+
+  function deleteAudioRecording() {
+    setAudioURL(null);
+    setIsAudioRecorded(false);
+    setAudioRecordingState("inactive");
+    setAudioChunks([]);
   }
   return (
     <div className="space-y-2">
@@ -315,71 +388,134 @@ const DayDescription = ({
                       </motion.button>
                     </div>
                   </Tab.Panel>
-
-                  {/* Audio Tab Panel */}
-                  {/* <Tab.Panel>
+                  <Tab.Panel>
                     <div className="space-y-4">
-                      <div className="flex justify-start">
-                        {!isRecording ? (
+                      {/* Audio Recording Button */}
+                      {!isAudioRecorded &&
+                        audioRecordingState === "inactive" && (
+                          <div
+                            className="relative group cursor-pointer"
+                            onClick={startAudioRecording}
+                          >
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 transition-all duration-200 group-hover:border-blue-500">
+                              <div className="flex flex-col items-center justify-center h-full space-y-3">
+                                <div className="p-3 bg-blue-50 rounded-full group-hover:bg-blue-100 transition-colors duration-200">
+                                  <MicrophoneIcon className="w-8 h-8 text-blue-600" />
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-sm font-medium text-blue-600">
+                                    Audio Recording
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Click to start recording
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Recording Controls */}
+                      {(audioRecordingState === "recording" ||
+                        audioRecordingState === "paused") && (
+                        <div className="min-h-[200px] border-2 border-gray-200 rounded-lg p-6">
+                          <div className="flex flex-col items-center justify-center h-full space-y-6">
+                            {/* Animated Microphone Icon */}
+                            <motion.div
+                              animate={{
+                                scale:
+                                  audioRecordingState === "recording"
+                                    ? [1, 1.2, 1]
+                                    : 1,
+                              }}
+                              transition={{
+                                repeat:
+                                  audioRecordingState === "recording"
+                                    ? Infinity
+                                    : 0,
+                                duration: 1.5,
+                              }}
+                              className="relative"
+                            >
+                              <div className="p-4 bg-red-50 rounded-full">
+                                <MicrophoneIcon
+                                  className={`w-8 h-8 ${
+                                    audioRecordingState === "recording"
+                                      ? "text-red-600"
+                                      : "text-gray-600"
+                                  }`}
+                                />
+                              </div>
+                              {audioRecordingState === "recording" && (
+                                <motion.div
+                                  className="absolute inset-0 rounded-full bg-red-100 -z-10"
+                                  animate={{
+                                    scale: [1, 1.5],
+                                    opacity: [0.5, 0],
+                                  }}
+                                  transition={{
+                                    repeat: Infinity,
+                                    duration: 1.5,
+                                  }}
+                                />
+                              )}
+                            </motion.div>
+
+                            {/* Control Buttons */}
+                            <div className="flex gap-2">
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                type="button"
+                                onClick={pauseOrResumeAudioRecording}
+                                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                              >
+                                {audioRecordingState === "paused" ? (
+                                  <>
+                                    <PlayIcon className="w-5 h-5 mr-2" />
+                                    Resume
+                                  </>
+                                ) : (
+                                  <>
+                                    <PauseIcon className="w-5 h-5 mr-2" />
+                                    Pause
+                                  </>
+                                )}
+                              </motion.button>
+
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                type="button"
+                                onClick={stopAudioRecording}
+                                className="flex items-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                              >
+                                <StopIcon className="w-5 h-5 mr-2" />
+                                Stop Recording
+                              </motion.button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Audio Playback */}
+                      {isAudioRecorded && audioURL && (
+                        <div className="space-y-4">
+                          <audio src={audioURL} controls className="w-full" />
                           <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             type="button"
-                            onClick={() => startRecording("audio")}
-                            className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                            onClick={deleteAudioRecording}
+                            className="flex items-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
                           >
-                            <MicrophoneIcon className="w-5 h-5 mr-2" />
-                            Record Audio
+                            <TrashIcon className="w-5 h-5 mr-2" />
+                            Delete
                           </motion.button>
-                        ) : (
-                          <div className="flex gap-2">
-                            <motion.button
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              type="button"
-                              onClick={pauseResumeRecording}
-                              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                            >
-                              {isPaused ? (
-                                <>
-                                  <PlayIcon className="w-5 h-5 mr-2" />
-                                  Resume
-                                </>
-                              ) : (
-                                <>
-                                  <PauseIcon className="w-5 h-5 mr-2" />
-                                  Pause
-                                </>
-                              )}
-                            </motion.button>
-
-                            <motion.button
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              type="button"
-                              onClick={stopRecording}
-                              className="flex items-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                            >
-                              <StopIcon className="w-5 h-5 mr-2" />
-                              Stop Recording
-                            </motion.button>
-                          </div>
-                        )}
-                      </div>
-
-                      {mediaFile &&
-                        !isRecording &&
-                        recordingType === "audio" && (
-                          <div className="mt-4">
-                            <audio
-                              src={mediaFile}
-                              controls
-                              className="w-full"
-                            />
-                          </div>
-                        )}
+                        </div>
+                      )}
                     </div>
-                  </Tab.Panel> */}
+                  </Tab.Panel>
                 </Tab.Panels>
               </Tab.Group>
             </div>
