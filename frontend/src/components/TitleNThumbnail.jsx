@@ -1,16 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import { PhotoIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 const TitleNThumbnail = ({ title, setTitle, thumbnail, setThumbnail }) => {
+  const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const handleThumbnailUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
-      setThumbnail(imageUrl);
+      setThumbnailPreview(imageUrl);
+      setThumbnail(file);
     }
   };
 
   const removeThumbnail = () => {
+    setThumbnailPreview(null);
     setThumbnail(null);
   };
 
@@ -37,10 +40,10 @@ const TitleNThumbnail = ({ title, setTitle, thumbnail, setThumbnail }) => {
           Journal Thumbnail
         </label>
         <div className="relative">
-          {thumbnail ? (
+          {thumbnailPreview ? (
             <div className="relative inline-block">
               <img
-                src={thumbnail}
+                src={thumbnailPreview}
                 alt="Thumbnail preview"
                 className="w-full h-48 object-cover rounded-lg"
               />

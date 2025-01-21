@@ -6,6 +6,8 @@ import ProductivitySlider from "../components/ProductivitySlider";
 import MoodPicker from "../components/MoodPicker";
 import TitleNThumbnail from "../components/TitleNThumbnail";
 import DayDescription from "../components/DayDescription";
+import { addOrUpdateJournal } from "../api";
+
 const JournalEntryForm = () => {
   //States for journal Title and Thumbnail
   const [title, setTitle] = useState("");
@@ -42,9 +44,31 @@ const JournalEntryForm = () => {
   }
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log("This is thumbnail", thumbnail);
+    console.log("This is snapshots", snapPhotos);
     const isValid = validateForm();
     if (isValid) {
-      // Handle form submission
+      // Get current date
+      const currentDate = new Date().toISOString().split("T")[0];
+
+      // Create a FormData object
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("content-type", content.type);
+      formData.append("content-payload", content.payload);
+      formData.append("thumbnail", thumbnail); // Assuming thumbnail is a file (you'll need to handle this in the form input)
+
+      // Add snap photos to formData (handle if there are multiple files)
+      snapPhotos.forEach((photo) => {
+        formData.append("snapPhotos", photo);
+      });
+
+      formData.append("productivityRating", productivityRating);
+      formData.append("selectedMood", JSON.stringify(selectedMood)); // Send as JSON string
+      formData.append("journalEntryDate", currentDate);
+      console.log("Snap Photos:", formData.getAll("snapPhotos"));
+
+      addOrUpdateJournal(formData);
     }
   };
 
