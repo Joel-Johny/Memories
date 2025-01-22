@@ -1,7 +1,8 @@
-const express = require("express");
 const dotenv = require("dotenv");
+dotenv.config(); // Load environment variables
+const express = require("express");
 const connectDB = require("./config/db");
-const userRoutes = require("./routes/userRoutes");
+// const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
 const journalRoutes = require("./routes/journalRoutes");
 const cors = require("cors");
@@ -25,10 +26,9 @@ app.get("/test-get-data", (req, res) => {
 });
 
 app.post("/test-post-data", (req, res) => {
-  console.log(req.body); // Will log: undefined
   res.send("Data received");
 });
-app.use("/api/users", userRoutes);
+// app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/journals", journalRoutes);
 

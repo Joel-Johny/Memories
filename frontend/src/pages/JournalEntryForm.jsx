@@ -55,8 +55,8 @@ const JournalEntryForm = () => {
       // Create a FormData object
       const formData = new FormData();
       formData.append("title", title);
-      formData.append("content-type", content.type);
-      formData.append("content-payload", content.payload);
+      formData.append("contentType", content.type);
+      formData.append("contentPayload", content.payload);
       formData.append("thumbnail", thumbnail); // Assuming thumbnail is a file (you'll need to handle this in the form input)
 
       // Add snap photos to formData (handle if there are multiple files)
