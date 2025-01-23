@@ -17,7 +17,7 @@ const journalSchema = new mongoose.Schema({
   content: {
     type: {
       type: String, // 'text', 'video', or 'audio'
-      enum: ["text", "video", "audio"],
+      enum: ["text", "video/webm", "audio/webm"],
       required: true,
     },
     payload: {

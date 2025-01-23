@@ -83,7 +83,7 @@ const addOrUpdateJournal = async (req, res) => {
     } else if (contentType === "audio/webm" || contentType === "video/webm") {
       // Upload file to Cloudinary
       contentPayload = req.files.contentPayload[0].path;
-      console.log(req.files.contentPayload);
+      // console.log(req.files.contentPayload);
     } else {
       return res.status(400).json({ message: "Invalid content type" });
     }
@@ -117,7 +117,7 @@ const addOrUpdateJournal = async (req, res) => {
 
     return res.status(200).json({ message, journal });
   } catch (error) {
-    console.log(error);
+    console.log("Somwthing went wrong dude.....", error.message);
     return res.status(500).json({ message: "Server error", error });
   }
 };

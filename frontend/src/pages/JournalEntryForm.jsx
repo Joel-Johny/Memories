@@ -44,9 +44,6 @@ const JournalEntryForm = () => {
   }
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("This is thumbnail", thumbnail);
-    console.log("This is snapshots", snapPhotos);
-    console.log("This is video", content);
     const isValid = validateForm();
     if (isValid) {
       // Get current date
@@ -56,7 +53,17 @@ const JournalEntryForm = () => {
       const formData = new FormData();
       formData.append("title", title);
       formData.append("contentType", content.type);
-      formData.append("contentPayload", content.payload);
+      if (content.type === "text") {
+        formData.append("contentPayload", content.payload);
+      } else {
+        const recordingFile = new File([content.payload], "recording", {
+          type: content.payload.type,
+        });
+        console.log("This is the blob", content.payload);
+        console.log("This is the recording", recordingFile);
+        // downloadFile(recordingFile);
+        formData.append("contentPayload", recordingFile);
+      }
       formData.append("thumbnail", thumbnail); // Assuming thumbnail is a file (you'll need to handle this in the form input)
 
       // Add snap photos to formData (handle if there are multiple files)
@@ -67,12 +74,27 @@ const JournalEntryForm = () => {
       formData.append("productivityRating", productivityRating);
       formData.append("selectedMood", JSON.stringify(selectedMood)); // Send as JSON string
       formData.append("journalEntryDate", currentDate);
-      console.log("Snap Photos:", formData.getAll("snapPhotos"));
 
       addOrUpdateJournal(formData);
     }
   };
+  const downloadFile = (file) => {
+    // Create a URL for the file
+    const url = URL.createObjectURL(file);
 
+    // Create a temporary anchor element
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = file.name || "download"; // Use file name or default
+
+    // Programmatically click the link to trigger download
+    document.body.appendChild(link);
+    link.click();
+
+    // Clean up
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
