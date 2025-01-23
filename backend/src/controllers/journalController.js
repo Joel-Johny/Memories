@@ -24,7 +24,7 @@ const journalEntryValidation = ({
   // Validate journalEntryDate
   const currentDate = new Date().toISOString().split("T")[0];
   if (new Date(journalEntryDate) < currentDate) {
-    console.log(journalEntryDate, currentDate);
+    // console.log(journalEntryDate, currentDate);
     return {
       status: "fail",
       message: "Cannot add or update journals for past dates",
@@ -53,55 +53,37 @@ const addOrUpdateJournal = async (req, res) => {
     selectedMood,
   } = req.body;
 
-  console.log("Inside the controller", req.body);
-  console.log("Inside the controller", req.files);
+  // console.log("Inside the controller", req.body);
+  // console.log("Inside the controller", req.files);
 
   // Validate the journal entry
+  console.log("running validation");
   const validationResult = journalEntryValidation(req.body);
-  console.log("running validation", validationResult);
 
   if (validationResult.status === "fail") {
     return res.status(400).json({ message: validationResult.message });
   }
+  console.log("validation success");
   try {
     // **Handle File Uploads**
-    let thumbnailUrl = "";
-    if (req.files.thumbnail) {
-      const thumbnailResult = await cloudinary.uploader.upload(
-        req.files.thumbnail[0].path,
-        { folder: "journals/thumbnails" }
-      );
-      thumbnailUrl = thumbnailResult.secure_url;
-    }
+    let thumbnailUrl =
+      "https://plus.unsplash.com/premium_photo-1664474619075-644dd191935f?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+    if (req.files.thumbnail) thumbnailUrl = req.files.thumbnail[0].path;
 
     const snapPhotoUrls = [];
     if (req.files.snapPhotos) {
-      for (const snapPhoto of req.files.snapPhotos) {
-        const snapResult = await cloudinary.uploader.upload(snapPhoto.path, {
-          folder: "journals/snapshots",
-        });
-        console.log("This is individaula snap photo data", snapPhoto.path);
-        snapPhotoUrls.push(snapResult.secure_url);
-      }
+      for (const snapPhoto of req.files.snapPhotos)
+        snapPhotoUrls.push(snapPhoto.path);
     }
     // **Handle Content Type**
     let contentPayload = null;
-    if (content.type === "text") {
+    if (contentType === "text") {
       // Directly save text content
-      contentPayload = content.payload;
-    } else if (content.type === "audio" || content.type === "video") {
+      contentPayload = req.body.contentPayload;
+    } else if (contentType === "audio/webm" || contentType === "video/webm") {
       // Upload file to Cloudinary
-      const fileKey = content.type === "audio" ? "audio" : "video";
-      if (!req.files[fileKey]) {
-        return res
-          .status(400)
-          .json({ message: `${content.type} file is required` });
-      }
-      const uploadResult = await cloudinary.uploader.upload(
-        req.files[fileKey][0].path,
-        { folder: `journals/${content.type}s` }
-      );
-      contentPayload = uploadResult.secure_url;
+      contentPayload = req.files.contentPayload[0].path;
+      console.log(req.files.contentPayload);
     } else {
       return res.status(400).json({ message: "Invalid content type" });
     }
@@ -112,15 +94,21 @@ const addOrUpdateJournal = async (req, res) => {
       {
         $set: {
           title,
-          content: { type: content.type, payload: contentPayload },
+          content: { type: contentType, payload: contentPayload },
           thumbnail: thumbnailUrl,
           snapPhotos: snapPhotoUrls.length ? snapPhotoUrls : undefined,
           productivityRating,
-          selectedMood,
+          selectedMood: JSON.parse(selectedMood),
         },
       },
-      { new: true, upsert: true }
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+        runValidators: true,
+      }
     );
+    // console.log(journal);
 
     const message =
       journal.createdAt === journal.updatedAt
@@ -129,6 +117,7 @@ const addOrUpdateJournal = async (req, res) => {
 
     return res.status(200).json({ message, journal });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ message: "Server error", error });
   }
 };
