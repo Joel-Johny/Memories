@@ -1,8 +1,9 @@
 const multer = require("multer");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const path = require("path");
 const cloudinary = require("cloudinary").v2;
 const dotenv = require("dotenv");
 dotenv.config();
+const fs = require("fs");
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -10,33 +11,47 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: "memories-journal",
-    allowed_formats: ["jpg", "png", "jpeg", "webm", "mp4", "mov"], // Add more formats as needed
-    resource_type: "auto", // Explicitly set for video uploads
+// Ensure the uploads directory exists
+const uploadDir = path.join(__dirname, "../../uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir); // Make sure this uploads folder exists
   },
-  error: (err, cb) => {
-    console.error("Cloudinary Storage Error:", err);
-    cb(err);
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+    );
   },
 });
 
 const upload = multer({
-  storage,
+  storage: storage,
   fileFilter: (req, file, cb) => {
-    console.log("File for Cloudinary:", {
-      fieldname: file.fieldname,
-      originalname: file.originalname,
-      mimetype: file.mimetype,
-    });
-    cb(null, true);
+    const allowedTypes = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "video/webm",
+      "audio/webm",
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type"), false);
+    }
+  },
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB file size limit
   },
 }).fields([
   { name: "thumbnail", maxCount: 1 },
   { name: "snapPhotos", maxCount: 5 },
-  { name: "contentPayload", maxCount: 1 }, // Allow only one contentPayload file
+  { name: "contentPayload", maxCount: 1 },
 ]);
 
-module.exports = { upload };
+module.exports = { upload, cloudinary };

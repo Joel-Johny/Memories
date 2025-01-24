@@ -89,22 +89,27 @@ const DayDescription = ({
     try {
       const videoStream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          latency: 0, // Minimize latency
+        },
       });
+
       liveVideoRef.current.srcObject = videoStream;
 
-      const videoRecorder = new MediaRecorder(videoStream);
-      // console.log("State : ", videoRecorder.state);
+      // Let the stream stabilize for 500ms
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
+      const videoRecorder = new MediaRecorder(videoStream);
       setVideoRecorder(videoRecorder);
+
       videoRecorder.ondataavailable = (event) => {
         setRecordedChunks((prevChunks) => [...prevChunks, event.data]);
       };
 
-      videoRecorder.start(200);
-      // console.log("Recording started...");
+      videoRecorder.start(1000); // Record in 1-second chunks
       setVideoRecordingState("recording");
-      // console.log("State : ", videoRecorder.state);
     } catch (error) {
       setError(error);
       console.error("Error accessing camera:", error);
@@ -148,8 +153,13 @@ const DayDescription = ({
   async function startAudioRecording() {
     try {
       const audioStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          latency: 0, // Minimize latency
+        },
       });
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const recorder = new MediaRecorder(audioStream);
       setAudioRecorder(recorder);
@@ -158,7 +168,7 @@ const DayDescription = ({
         setAudioChunks((prevChunks) => [...prevChunks, event.data]);
       };
 
-      recorder.start(200);
+      recorder.start(1000);
       setAudioRecordingState("recording");
     } catch (error) {
       setError(error);

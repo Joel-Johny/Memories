@@ -1,5 +1,6 @@
 const { cloudinary } = require("../middleware/multerCloudinaryMiddleware");
 const Journal = require("../models/Journal");
+const fs = require("fs/promises"); // For file system operations with promises
 
 const journalEntryValidation = ({
   journalEntryDate,
@@ -44,6 +45,21 @@ const journalEntryValidation = ({
   return { status: "success", message: "Validation passed" };
 };
 
+const cleanupUploads = async (files) => {
+  try {
+    // Loop through each field in `files`
+    for (const field in files) {
+      for (const file of files[field]) {
+        console.log(`Deleting file: ${file.path}`);
+        await fs.unlink(file.path); // Delete the file
+      }
+    }
+    console.log("All files cleaned up successfully");
+  } catch (err) {
+    console.error("Error while cleaning up uploads", err.message);
+  }
+};
+
 const addOrUpdateJournal = async (req, res) => {
   const {
     journalEntryDate,
@@ -54,36 +70,53 @@ const addOrUpdateJournal = async (req, res) => {
   } = req.body;
 
   // console.log("Inside the controller", req.body);
-  // console.log("Inside the controller", req.files);
+  console.log("Inside the controller", req.files);
 
   // Validate the journal entry
-  console.log("running validation");
+  // console.log("Running validation");
   const validationResult = journalEntryValidation(req.body);
 
   if (validationResult.status === "fail") {
     return res.status(400).json({ message: validationResult.message });
   }
-  console.log("validation success");
+
+  // console.log("Validation success");
   try {
-    // **Handle File Uploads**
+    // **Handle Thumbnail Upload**
     let thumbnailUrl =
       "https://plus.unsplash.com/premium_photo-1664474619075-644dd191935f?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
-    if (req.files.thumbnail) thumbnailUrl = req.files.thumbnail[0].path;
+    if (req.files.thumbnail) {
+      const thumbnail = req.files.thumbnail[0];
+      const thumbnailResult = await cloudinary.uploader.upload(thumbnail.path, {
+        folder: "memories-journal/thumbnails",
+      });
+      thumbnailUrl = thumbnailResult.secure_url; // Cloudinary URL for thumbnail
+    }
 
+    // **Handle Snap Photo Uploads**
     const snapPhotoUrls = [];
     if (req.files.snapPhotos) {
-      for (const snapPhoto of req.files.snapPhotos)
-        snapPhotoUrls.push(snapPhoto.path);
+      for (const snapPhoto of req.files.snapPhotos) {
+        const snapResult = await cloudinary.uploader.upload(snapPhoto.path, {
+          folder: "memories-journal/snapshots",
+        });
+        snapPhotoUrls.push(snapResult.secure_url); // Cloudinary URL for each snap photo
+      }
     }
-    // **Handle Content Type**
+
+    // **Handle Content Upload (Text, Audio, or Video)**
     let contentPayload = null;
     if (contentType === "text") {
       // Directly save text content
       contentPayload = req.body.contentPayload;
     } else if (contentType === "audio/webm" || contentType === "video/webm") {
-      // Upload file to Cloudinary
-      contentPayload = req.files.contentPayload[0].path;
-      // console.log(req.files.contentPayload);
+      // Upload audio/video to Cloudinary
+      const contentFile = req.files.contentPayload[0];
+      const contentResult = await cloudinary.uploader.upload(contentFile.path, {
+        folder: "memories-journal/content",
+        resource_type: "auto", // Automatically determines if audio or video
+      });
+      contentPayload = contentResult.secure_url; // Cloudinary URL for content
     } else {
       return res.status(400).json({ message: "Invalid content type" });
     }
@@ -108,7 +141,6 @@ const addOrUpdateJournal = async (req, res) => {
         runValidators: true,
       }
     );
-    // console.log(journal);
 
     const message =
       journal.createdAt === journal.updatedAt
@@ -117,8 +149,11 @@ const addOrUpdateJournal = async (req, res) => {
 
     return res.status(200).json({ message, journal });
   } catch (error) {
-    console.log("Somwthing went wrong dude.....", error.message);
+    console.log("Something went wrong...", error.message);
     return res.status(500).json({ message: "Server error", error });
+  } finally {
+    // **Cleanup Uploaded Files**
+    await cleanupUploads(req.files);
   }
 };
 
