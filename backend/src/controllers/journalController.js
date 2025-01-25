@@ -54,12 +54,70 @@ const cleanupUploads = async (files) => {
         await fs.unlink(file.path); // Delete the file
       }
     }
-    console.log("All files cleaned up successfully");
+    console.log("All files uploaded in server cleaned up successfully");
   } catch (err) {
     console.error("Error while cleaning up uploads", err.message);
   }
 };
 
+const cleanupCloudinaryData = async (userId) => {
+  // **Check for Existing Journal**
+  console.log("cloudinary cleanup");
+  const currentDate = new Date().toISOString().split("T")[0];
+
+  const existingJournal = await Journal.findOne({
+    user: userId,
+    date: currentDate,
+  });
+
+  if (existingJournal) {
+    console.log(
+      "Existing journal found. Deleting associated resources from cloudinary."
+    );
+    const deleteCloudinaryResource = async (publicId) => {
+      try {
+        const result = await cloudinary.uploader.destroy(publicId);
+        console.log(`Deleted Result for url:`, publicId, result);
+      } catch (error) {
+        console.error(`Error deleting resource:`, error);
+      }
+    };
+    // **Delete Existing Resources from Cloudinary**
+    const defaultThumbnail =
+      "https://plus.unsplash.com/premium_photo-1664474619075-644dd191935f?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+
+    if (
+      existingJournal.thumbnail &&
+      existingJournal.thumbnail !== defaultThumbnail
+    ) {
+      const publicId =
+        "memories-journal/thumbnails/" +
+        existingJournal.thumbnail.split("/").pop().split(".")[0];
+      deleteCloudinaryResource(publicId);
+    }
+
+    if (existingJournal.snapPhotos && existingJournal.snapPhotos.length) {
+      for (const snapPhoto of existingJournal.snapPhotos) {
+        const publicId =
+          "memories-journal/snapshots/" +
+          snapPhoto.split("/").pop().split(".")[0];
+        deleteCloudinaryResource(publicId);
+      }
+    }
+
+    if (
+      existingJournal.content.type !== "text" &&
+      existingJournal.content.payload
+    ) {
+      const publicId =
+        "memories-journal/contents/" +
+        existingJournal.content.payload.split("/").pop().split(".")[0];
+      deleteCloudinaryResource(publicId);
+    }
+
+    console.log("All associated resources deleted.");
+  }
+};
 const addOrUpdateJournal = async (req, res) => {
   const {
     journalEntryDate,
@@ -70,7 +128,7 @@ const addOrUpdateJournal = async (req, res) => {
   } = req.body;
 
   // console.log("Inside the controller", req.body);
-  console.log("Inside the controller", req.files);
+  // console.log("Inside the controller", req.files);
 
   // Validate the journal entry
   // console.log("Running validation");
@@ -83,6 +141,7 @@ const addOrUpdateJournal = async (req, res) => {
   // console.log("Validation success");
   try {
     // **Handle Thumbnail Upload**
+    await cleanupCloudinaryData(req.user.id);
     let thumbnailUrl =
       "https://plus.unsplash.com/premium_photo-1664474619075-644dd191935f?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
     if (req.files.thumbnail) {
@@ -113,7 +172,7 @@ const addOrUpdateJournal = async (req, res) => {
       // Upload audio/video to Cloudinary
       const contentFile = req.files.contentPayload[0];
       const contentResult = await cloudinary.uploader.upload(contentFile.path, {
-        folder: "memories-journal/content",
+        folder: "memories-journal/contents",
         resource_type: "auto", // Automatically determines if audio or video
       });
       contentPayload = contentResult.secure_url; // Cloudinary URL for content
