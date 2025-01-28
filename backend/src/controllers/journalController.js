@@ -215,7 +215,21 @@ const addOrUpdateJournal = async (req, res) => {
     await cleanupUploads(req.files);
   }
 };
-
+const journalByDate = async (req, res) => {
+  // console.log("Hey", req.params.date);
+  try {
+    const journal = await Journal.findOne({
+      user: req.user.id,
+      date: req.params.date,
+    });
+    if (!journal) {
+      return res.status(404).json({ message: "Journal not found" });
+    }
+    res.status(200).json(journal);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
 const getAllJournal = async (req, res) => {
   try {
     const journals = await Journal.find({ user: req.user._id });
@@ -224,4 +238,4 @@ const getAllJournal = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-module.exports = { addOrUpdateJournal, getAllJournal };
+module.exports = { addOrUpdateJournal, getAllJournal, journalByDate };
