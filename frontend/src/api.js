@@ -27,3 +27,14 @@ export const addOrUpdateJournal = async (formData) => {
     throw error;
   }
 };
+
+export const fetchJournalByDate = async (date) => {
+  try {
+    const date2 = "2025-01-25";
+    const response = await API.get(`/journals/${date2}`);
+    return response.data;
+  } catch (error) {
+    console.log("No Journal found on the said date", error);
+    throw error;
+  }
+};

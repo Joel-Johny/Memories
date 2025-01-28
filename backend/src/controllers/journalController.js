@@ -221,7 +221,7 @@ const journalByDate = async (req, res) => {
     const journal = await Journal.findOne({
       user: req.user.id,
       date: req.params.date,
-    });
+    }).select("-user");
     if (!journal) {
       return res.status(404).json({ message: "Journal not found" });
     }

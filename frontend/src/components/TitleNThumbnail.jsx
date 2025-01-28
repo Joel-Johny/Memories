@@ -1,20 +1,25 @@
 import React, { useState } from "react";
 import { PhotoIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
-const TitleNThumbnail = ({ title, setTitle, thumbnail, setThumbnail }) => {
-  const [thumbnailPreview, setThumbnailPreview] = useState(null);
+const TitleNThumbnail = ({ title, thumbnail, setFormData }) => {
+  console.log(title, thumbnail);
+
   const handleThumbnailUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
       setThumbnailPreview(imageUrl);
-      setThumbnail(file);
+      setFormData((oldForm) => {
+        return { ...oldForm, thumbnail: file };
+      });
     }
   };
 
   const removeThumbnail = () => {
     setThumbnailPreview(null);
-    setThumbnail(null);
+    setFormData((oldForm) => {
+      return { ...oldForm, thumbnail: null };
+    });
   };
 
   return (
@@ -27,7 +32,7 @@ const TitleNThumbnail = ({ title, setTitle, thumbnail, setThumbnail }) => {
         <input
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           placeholder="Enter journal title"
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
           required
@@ -40,10 +45,10 @@ const TitleNThumbnail = ({ title, setTitle, thumbnail, setThumbnail }) => {
           Journal Thumbnail
         </label>
         <div className="relative">
-          {thumbnailPreview ? (
+          {thumbnail ? (
             <div className="relative inline-block">
               <img
-                src={thumbnailPreview}
+                src={thumbnail}
                 alt="Thumbnail preview"
                 className="w-full h-48 object-cover rounded-lg"
               />
