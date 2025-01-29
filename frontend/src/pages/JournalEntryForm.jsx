@@ -6,37 +6,23 @@ import ProductivitySlider from "../components/ProductivitySlider";
 import MoodPicker from "../components/MoodPicker";
 import TitleNThumbnail from "../components/TitleNThumbnail";
 import DayDescription from "../components/DayDescription";
+import { useNavigate } from "react-router-dom";
 import { addOrUpdateJournal, fetchJournalByDate } from "../api";
-
+import { useAuth } from "../context/AuthContext";
 const JournalEntryForm = () => {
-  //States for journal Title and Thumbnail
-  const [title, setTitle] = useState("");
-  const [thumbnail, setThumbnail] = useState(null);
-
-  //States for journal Description Audio/Video/Text
-  const [content, setContent] = useState({ type: "", payload: "" });
-  const [selectedTab, setSelectedTab] = useState(0);
-
-  //State for journal Snapshot
-  const [snapPhotos, setSnapPhotos] = useState([]);
-  //States for journal Productivity and Mood
-  const [productivityRating, setProductivityRating] = useState(5);
-  const [selectedMood, setSelectedMood] = useState({
-    emoji: "😊",
-    label: "Happy",
-  });
-
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: "",
-    thumbnail: null,
+    thumbnail: { url: undefined, file: undefined },
     content: {
       type: "",
       payload: "",
     },
     selectedTab: 0,
-    snapPhotos: [],
+    snapPhotos: { urls: [], files: [] },
     productivityRating: 5,
-    mood: {
+    selectedMood: {
       emoji: "😊",
       label: "Happy",
     },
@@ -62,7 +48,7 @@ const JournalEntryForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    // console.log("we are submitting", formData);
     if (validateForm(formData)) {
       // Get current date
       const currentDate = new Date().toISOString().split("T")[0];
@@ -74,40 +60,43 @@ const JournalEntryForm = () => {
       submissionData.append("title", formData.title);
       submissionData.append("contentType", formData.content.type);
 
-      // Handle content payload based on type
       if (formData.content.type === "text") {
         submissionData.append("contentPayload", formData.content.payload);
       } else {
         const recordingFile = new File(
           [formData.content.payload],
-          "recording",
-          { type: formData.content.payload.type }
+          "recording.webm",
+          { type: formData.content.type }
         );
+        // downloadFile(recordingFile);
         submissionData.append("contentPayload", recordingFile);
       }
 
       // Handle thumbnail
       if (formData.thumbnail) {
-        submissionData.append("thumbnail", formData.thumbnail);
+        submissionData.append("thumbnail", formData.thumbnail.file);
       }
 
       // Handle multiple snap photos
-      formData.snapPhotos.forEach((photo) => {
+      formData.snapPhotos.files.forEach((photo) => {
         submissionData.append("snapPhotos", photo);
       });
 
       // Append ratings and mood
       submissionData.append("productivityRating", formData.productivityRating);
-      submissionData.append("selectedMood", JSON.stringify(formData.mood));
+      submissionData.append(
+        "selectedMood",
+        JSON.stringify(formData.selectedMood)
+      );
       submissionData.append("journalEntryDate", currentDate);
 
       try {
-        await addOrUpdateJournal(submissionData);
-        // Optional: Reset form after successful submission
-        setFormData(initialFormState);
+        const response = await addOrUpdateJournal(submissionData);
+        if (response.status === 200) navigate("/dashboard");
         setError("");
       } catch (err) {
         setError("Failed to submit journal entry. Please try again.");
+        if (err.response.status === 400) logout();
         console.error("Journal submission error:", err);
       }
     }
@@ -137,9 +126,43 @@ const JournalEntryForm = () => {
     const currentDate = new Date().toISOString().split("T")[0];
     const currentJournal = await fetchJournalByDate(currentDate);
     if (currentJournal) {
-      // console.log(currentJournal);
+      console.log("This is todays journal", currentJournal);
+      const thumbnailObject = {
+        url: currentJournal.thumbnail,
+        file: undefined,
+      };
+      const thumbnailFileResponse = await fetch(currentJournal.thumbnail);
+      const thumbnailFileBlob = await thumbnailFileResponse.blob();
+      const thumbnailFile = new File([thumbnailFileBlob], "thumbnail.jpg", {
+        type: thumbnailFileBlob.type,
+      });
+      thumbnailObject.file = thumbnailFile;
+
+      const snapPhotosObject = {
+        urls: currentJournal.snapPhotos,
+        files: [],
+      };
+
+      currentJournal.snapPhotos.forEach(async (url) => {
+        const response = await fetch(url);
+        const blob = await response.blob(); // Convert response to Blob
+        const file = new File([blob], "snapPhoto.jpg", { type: blob.type });
+        snapPhotosObject.files.push(file);
+      });
+
+      if (currentJournal.content.type !== "text") {
+        const response = await fetch(currentJournal.content.payload);
+        const blob = await response.blob(); // Convert response to Blob
+        const file = new File([blob], "recording", { type: blob.type });
+        currentJournal.content.payload = file;
+      }
       setJournalExists(true);
-      setFormData(currentJournal);
+
+      setFormData({
+        ...currentJournal,
+        thumbnail: thumbnailObject,
+        snapPhotos: snapPhotosObject,
+      });
     }
   }
   return (
@@ -164,29 +187,27 @@ const JournalEntryForm = () => {
           />
           {/* Journal Description Component */}
           <DayDescription
-            content={content}
-            setContent={setContent}
-            selectedTab={selectedTab}
-            setSelectedTab={setSelectedTab}
+            content={formData.content}
             setError={setError}
+            setFormData={setFormData}
           />
 
           {/*Memory Snap Upload */}
           <MemorySnapshot
-            snapPhotos={snapPhotos}
-            setSnapPhotos={setSnapPhotos}
+            snapPhotos={formData.snapPhotos}
+            setFormData={setFormData}
           />
 
           {/*Productivity Slider*/}
           <ProductivitySlider
-            productivityRating={productivityRating}
-            setProductivityRating={setProductivityRating}
+            productivityRating={formData.productivityRating}
+            setFormData={setFormData}
           />
 
           {/*Mood Picker */}
           <MoodPicker
-            selectedMood={selectedMood}
-            setSelectedMood={setSelectedMood}
+            selectedMood={formData.selectedMood}
+            setFormData={setFormData}
           />
           {/* Save Button */}
           <motion.button

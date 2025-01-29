@@ -1,6 +1,6 @@
 import React from "react";
 
-const ProductivitySlider = ({ productivityRating, setProductivityRating }) => {
+const ProductivitySlider = ({ productivityRating, setFormData }) => {
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700">
@@ -11,7 +11,12 @@ const ProductivitySlider = ({ productivityRating, setProductivityRating }) => {
         min="1"
         max="10"
         value={productivityRating}
-        onChange={(e) => setProductivityRating(Number(e.target.value))}
+        onChange={(e) =>
+          setFormData((oldForm) => ({
+            ...oldForm,
+            productivityRating: Number(e.target.value),
+          }))
+        }
         className="w-full"
       />
       <div className="flex justify-between text-xs text-gray-500">

@@ -9,20 +9,17 @@ import {
   StopIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
-const DayDescription = ({
-  content,
-  setContent,
-  selectedTab,
-  setSelectedTab,
-  setError,
-}) => {
+const DayDescription = ({ content, setError, setFormData }) => {
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [recordingTab, setRecordingTab] = useState(0);
+
   // Existing video refs and states
   const liveVideoRef = useRef(null);
-  const recordedVideoRef = useRef(null);
-  const [isVideoRecorded, setIsVideoRecorded] = useState(false);
-  const [videoRecordingState, setVideoRecordingState] = useState("inactive");
   const [videoRecorder, setVideoRecorder] = useState(null);
+  const [videoRecordingState, setVideoRecordingState] = useState("inactive");
   const [recordedChunks, setRecordedChunks] = useState([]);
+  const [isVideoRecorded, setIsVideoRecorded] = useState(false);
+  const [recordedVideoURL, setRecordedVideoURL] = useState(null);
 
   // New audio states
   const [audioRecorder, setAudioRecorder] = useState(null);
@@ -34,7 +31,23 @@ const DayDescription = ({
   const stopStream = (stream) => {
     stream.getTracks().forEach((track) => track.stop());
   };
-
+  useEffect(() => {
+    if (content.type && content.type !== "text") {
+      setSelectedTab(1);
+      if (content.type === "audio/webm") {
+        setRecordingTab(1);
+        setIsAudioRecorded(true);
+        const audioUrl = URL.createObjectURL(content.payload);
+        setAudioURL(audioUrl);
+      } else {
+        setRecordingTab(0);
+        setIsVideoRecorded(true);
+        const videoUrl = URL.createObjectURL(content.payload);
+        if (liveVideoRef.current) liveVideoRef.current.src = videoUrl;
+        setRecordedVideoURL(videoUrl);
+      }
+    }
+  }, [content]);
   useEffect(() => {
     return () => {
       if (videoRecorder) {
@@ -53,27 +66,29 @@ const DayDescription = ({
   };
 
   const handleRecordingTypeChange = (index) => {
+    setRecordingTab(index);
     reinitializeVideoRecorder();
     reinitializeAudioRecorder();
   };
 
   function reinitializeVideoRecorder() {
-    setContent({ type: "", payload: "" });
+    setFormData((oldForm) => {
+      return { ...oldForm, content: { type: "", payload: "" } };
+    });
     if (videoRecorder) {
       stopStream(liveVideoRef.current.srcObject);
       videoRecorder.stop();
     }
     setVideoRecorder(null);
     setRecordedChunks([]);
-    if (recordedVideoRef.current) {
-      recordedVideoRef.current.src = null;
-    }
     setIsVideoRecorded(false);
     setVideoRecordingState("inactive");
   }
 
   function reinitializeAudioRecorder() {
-    setContent({ type: "", payload: "" });
+    setFormData((oldForm) => {
+      return { ...oldForm, content: { type: "", payload: "" } };
+    });
     if (audioRecorder) {
       stopStream(audioRecorder.stream);
       audioRecorder.stop();
@@ -129,9 +144,14 @@ const DayDescription = ({
     videoRecorder.onstop = () => {
       // console.log("This is recorded CHunks", recordedChunks);
       const recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
-      recordedVideoRef.current.src = URL.createObjectURL(recordedBlob);
+      setRecordedVideoURL(URL.createObjectURL(recordedBlob));
       setVideoRecordingState("inactive");
-      setContent({ type: "video/webm", payload: recordedBlob });
+      setFormData((oldForm) => {
+        return {
+          ...oldForm,
+          content: { type: "video/webm", payload: recordedBlob },
+        };
+      });
       setIsVideoRecorded(true);
       setRecordedChunks([]);
     };
@@ -143,7 +163,7 @@ const DayDescription = ({
 
   function deleteVideoRecording() {
     // console.log("deleting");
-    recordedVideoRef.current.src = null;
+    setRecordedVideoURL(null);
     setIsVideoRecorded(false);
     setVideoRecordingState("inactive");
     setRecordedChunks([]);
@@ -191,7 +211,12 @@ const DayDescription = ({
       const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
       const audioUrl = URL.createObjectURL(audioBlob);
       setAudioURL(audioUrl);
-      setContent({ type: "audio/webm", payload: audioBlob });
+      setFormData((oldForm) => {
+        return {
+          ...oldForm,
+          content: { type: "audio/webm", payload: audioBlob },
+        };
+      });
       setIsAudioRecorded(true);
       setAudioChunks([]);
       setAudioRecordingState("inactive");
@@ -244,7 +269,10 @@ const DayDescription = ({
             <textarea
               value={content.payload}
               onChange={(e) =>
-                setContent({ type: "text", payload: e.target.value })
+                setFormData((oldForm) => ({
+                  ...oldForm,
+                  content: { type: "text", payload: e.target.value },
+                }))
               }
               placeholder="Write about your day..."
               rows={6}
@@ -253,7 +281,10 @@ const DayDescription = ({
           </Tab.Panel>
           <Tab.Panel>
             <div className="space-y-4">
-              <Tab.Group onChange={handleRecordingTypeChange}>
+              <Tab.Group
+                selectedIndex={recordingTab}
+                onChange={handleRecordingTypeChange}
+              >
                 <Tab.List className="flex flex-col sm:flex-col md:inline-flex md:flex-row rounded-lg bg-gray-100 p-1 mt-5 w-full md:w-auto">
                   <Tab
                     className={({ selected }) =>
@@ -380,7 +411,7 @@ const DayDescription = ({
                       >
                         <video
                           controls
-                          ref={recordedVideoRef}
+                          src={recordedVideoURL}
                           className={`w-full h-full object-cover`}
                         />
                       </div>

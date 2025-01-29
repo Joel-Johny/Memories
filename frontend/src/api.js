@@ -21,7 +21,7 @@ export const addOrUpdateJournal = async (formData) => {
         "Content-Type": "multipart/form-data", // Ensure the backend knows it's a form data request
       },
     });
-    return response.data;
+    return response;
   } catch (error) {
     console.error("Error while adding/updating journal:", error);
     throw error;
@@ -30,8 +30,7 @@ export const addOrUpdateJournal = async (formData) => {
 
 export const fetchJournalByDate = async (date) => {
   try {
-    const date2 = "2025-01-25";
-    const response = await API.get(`/journals/${date2}`);
+    const response = await API.get(`/journals/${date}`);
     return response.data;
   } catch (error) {
     console.log("No Journal found on the said date", error);
