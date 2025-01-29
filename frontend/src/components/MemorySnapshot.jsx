@@ -1,17 +1,30 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { PhotoIcon, XMarkIcon } from "@heroicons/react/24/outline";
-const MemorySnapshot = ({ snapPhotos, setSnapPhotos }) => {
-  const [snapPhotosPreview, setSnapPhotosPreview] = useState([]);
+const MemorySnapshot = ({ snapPhotos, setFormData }) => {
   const handleSnapPhotosUpload = (event) => {
     const files = Array.from(event.target.files);
     const newPhotos = files.map((file) => URL.createObjectURL(file));
-    setSnapPhotosPreview([...snapPhotosPreview, ...newPhotos]);
-    setSnapPhotos([...snapPhotos, ...files]);
+    setFormData((oldForm) => {
+      return {
+        ...oldForm,
+        snapPhotos: {
+          urls: [...oldForm.snapPhotos.urls, ...newPhotos],
+          files: [...oldForm.snapPhotos.files, ...files],
+        },
+      };
+    });
   };
 
   const removePhoto = (index) => {
-    setSnapPhotosPreview(snapPhotosPreview.filter((_, i) => i !== index));
-    setSnapPhotos(snapPhotos.filter((_, i) => i !== index));
+    setFormData((oldForm) => {
+      return {
+        ...oldForm,
+        snapPhotos: {
+          urls: oldForm.snapPhotos.urls.filter((_, i) => i !== index),
+          files: oldForm.snapPhotos.files.filter((_, i) => i !== index),
+        },
+      };
+    });
   };
   return (
     <div className="space-y-2">
@@ -19,7 +32,7 @@ const MemorySnapshot = ({ snapPhotos, setSnapPhotos }) => {
         Snaps of Memory
       </label>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-        {snapPhotosPreview.map((photo, index) => (
+        {snapPhotos.urls.map((photo, index) => (
           <div key={index} className="relative">
             <img
               src={photo}
@@ -35,7 +48,7 @@ const MemorySnapshot = ({ snapPhotos, setSnapPhotos }) => {
             </button>
           </div>
         ))}
-        {snapPhotosPreview.length <= 4 && (
+        {snapPhotos.urls.length <= 4 && (
           <label className="border-2 border-dashed border-gray-300 rounded-lg p-4 h-32 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors duration-200">
             <input
               type="file"

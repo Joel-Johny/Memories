@@ -36,9 +36,11 @@ const journalEntryValidation = ({
     return { status: "fail", message: "Productivity rating is required" };
   }
 
-  const mood = JSON.parse(selectedMood);
-  if (mood.emoji === "" || mood.label === "") {
-    return { status: "fail", message: "Mood is required" };
+  if (selectedMood && typeof selectedMood !== "string") {
+    const mood = JSON.parse(selectedMood);
+    if (mood.emoji === "" || mood.label === "") {
+      return { status: "fail", message: "Mood is required" };
+    }
   }
 
   // If all validations pass
@@ -74,9 +76,14 @@ const cleanupCloudinaryData = async (userId) => {
     console.log(
       "Existing journal found. Deleting associated resources from cloudinary."
     );
-    const deleteCloudinaryResource = async (publicId) => {
+    const deleteCloudinaryResource = async (
+      publicId,
+      resource_type = "image"
+    ) => {
       try {
-        const result = await cloudinary.uploader.destroy(publicId);
+        const result = await cloudinary.uploader.destroy(publicId, {
+          resource_type: resource_type,
+        });
         console.log(`Deleted Result for url:`, publicId, result);
       } catch (error) {
         console.error(`Error deleting resource:`, error);
@@ -112,7 +119,7 @@ const cleanupCloudinaryData = async (userId) => {
       const publicId =
         "memories-journal/contents/" +
         existingJournal.content.payload.split("/").pop().split(".")[0];
-      deleteCloudinaryResource(publicId);
+      deleteCloudinaryResource(publicId, "video");
     }
 
     console.log("All associated resources deleted.");
@@ -221,7 +228,7 @@ const journalByDate = async (req, res) => {
     const journal = await Journal.findOne({
       user: req.user.id,
       date: req.params.date,
-    });
+    }).select("-user");
     if (!journal) {
       return res.status(404).json({ message: "Journal not found" });
     }

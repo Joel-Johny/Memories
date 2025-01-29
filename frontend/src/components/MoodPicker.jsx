@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-const MoodPicker = ({ selectedMood, setSelectedMood }) => {
+const MoodPicker = ({ selectedMood, setFormData }) => {
   const moods = [
     { emoji: "😊", label: "Happy" },
     { emoji: "😢", label: "Sad" },
@@ -24,7 +24,12 @@ const MoodPicker = ({ selectedMood, setSelectedMood }) => {
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.9 }}
             type="button"
-            onClick={() => setSelectedMood(mood)}
+            onClick={() =>
+              setFormData((oldForm) => ({
+                ...oldForm,
+                selectedMood: mood,
+              }))
+            }
             aria-pressed={selectedMood?.label === mood.label}
             className={`p-2 sm:p-3 rounded-lg text-center transition-transform duration-200 ease-in-out 
   ${

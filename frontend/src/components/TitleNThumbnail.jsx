@@ -1,20 +1,21 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { PhotoIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
-const TitleNThumbnail = ({ title, setTitle, thumbnail, setThumbnail }) => {
-  const [thumbnailPreview, setThumbnailPreview] = useState(null);
+const TitleNThumbnail = ({ title, thumbnail, setFormData }) => {
   const handleThumbnailUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setThumbnailPreview(imageUrl);
-      setThumbnail(file);
+    const imageFile = e.target.files[0];
+    if (imageFile) {
+      const imageUrl = URL.createObjectURL(imageFile);
+      setFormData((oldForm) => {
+        return { ...oldForm, thumbnail: { url: imageUrl, file: imageFile } };
+      });
     }
   };
 
   const removeThumbnail = () => {
-    setThumbnailPreview(null);
-    setThumbnail(null);
+    setFormData((oldForm) => {
+      return { ...oldForm, thumbnail: { url: undefined, file: undefined } };
+    });
   };
 
   return (
@@ -27,7 +28,11 @@ const TitleNThumbnail = ({ title, setTitle, thumbnail, setThumbnail }) => {
         <input
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) =>
+            setFormData((oldForm) => {
+              return { ...oldForm, title: e.target.value };
+            })
+          }
           placeholder="Enter journal title"
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
           required
@@ -40,10 +45,10 @@ const TitleNThumbnail = ({ title, setTitle, thumbnail, setThumbnail }) => {
           Journal Thumbnail
         </label>
         <div className="relative">
-          {thumbnailPreview ? (
+          {thumbnail && thumbnail.url ? (
             <div className="relative inline-block">
               <img
-                src={thumbnailPreview}
+                src={thumbnail.url}
                 alt="Thumbnail preview"
                 className="w-full h-48 object-cover rounded-lg"
               />

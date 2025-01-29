@@ -8,21 +8,23 @@ import {
   PlayIcon,
   StopIcon,
   TrashIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
-const DayDescription = ({
-  content,
-  setContent,
-  selectedTab,
-  setSelectedTab,
-  setError,
-}) => {
+const DayDescription = ({ content, setError, setFormData }) => {
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [recordingTab, setRecordingTab] = useState(0);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingTabChange, setPendingTabChange] = useState(null);
+  const [pendingRecordingTabChange, setPendingRecordingTabChange] =
+    useState(null);
+
   // Existing video refs and states
   const liveVideoRef = useRef(null);
-  const recordedVideoRef = useRef(null);
-  const [isVideoRecorded, setIsVideoRecorded] = useState(false);
-  const [videoRecordingState, setVideoRecordingState] = useState("inactive");
   const [videoRecorder, setVideoRecorder] = useState(null);
+  const [videoRecordingState, setVideoRecordingState] = useState("inactive");
   const [recordedChunks, setRecordedChunks] = useState([]);
+  const [isVideoRecorded, setIsVideoRecorded] = useState(false);
+  const [recordedVideoURL, setRecordedVideoURL] = useState(null);
 
   // New audio states
   const [audioRecorder, setAudioRecorder] = useState(null);
@@ -34,7 +36,23 @@ const DayDescription = ({
   const stopStream = (stream) => {
     stream.getTracks().forEach((track) => track.stop());
   };
-
+  useEffect(() => {
+    if (content.type && content.type !== "text") {
+      setSelectedTab(1);
+      if (content.type === "audio/webm") {
+        setRecordingTab(1);
+        setIsAudioRecorded(true);
+        const audioUrl = URL.createObjectURL(content.payload);
+        setAudioURL(audioUrl);
+      } else {
+        setRecordingTab(0);
+        setIsVideoRecorded(true);
+        const videoUrl = URL.createObjectURL(content.payload);
+        if (liveVideoRef.current) liveVideoRef.current.src = videoUrl;
+        setRecordedVideoURL(videoUrl);
+      }
+    }
+  }, [content]);
   useEffect(() => {
     return () => {
       if (videoRecorder) {
@@ -46,34 +64,78 @@ const DayDescription = ({
     };
   }, []);
 
+  const hasContent = () => {
+    if (selectedTab === 0) {
+      return content.payload.trim().length > 0;
+    } else {
+      if (recordingTab === 0) {
+        return isVideoRecorded || videoRecordingState !== "inactive";
+      } else {
+        return isAudioRecorded || audioRecordingState !== "inactive";
+      }
+    }
+  };
+
   const handleMainTabChange = (index) => {
-    setSelectedTab(index);
-    reinitializeVideoRecorder();
-    reinitializeAudioRecorder();
+    if (hasContent()) {
+      setPendingTabChange(index);
+      setShowConfirmModal(true);
+    } else {
+      setSelectedTab(index);
+      reinitializeVideoRecorder();
+      reinitializeAudioRecorder();
+    }
   };
 
   const handleRecordingTypeChange = (index) => {
+    if (hasContent()) {
+      setPendingRecordingTabChange(index);
+      setShowConfirmModal(true);
+    } else {
+      setRecordingTab(index);
+      reinitializeVideoRecorder();
+      reinitializeAudioRecorder();
+    }
+  };
+
+  const handleConfirmTabChange = () => {
+    if (pendingTabChange !== null) {
+      setSelectedTab(pendingTabChange);
+      setPendingTabChange(null);
+    }
+    if (pendingRecordingTabChange !== null) {
+      setRecordingTab(pendingRecordingTabChange);
+      setPendingRecordingTabChange(null);
+    }
     reinitializeVideoRecorder();
     reinitializeAudioRecorder();
+    setShowConfirmModal(false);
+  };
+
+  const handleCancelTabChange = () => {
+    setPendingTabChange(null);
+    setPendingRecordingTabChange(null);
+    setShowConfirmModal(false);
   };
 
   function reinitializeVideoRecorder() {
-    setContent({ type: "", payload: "" });
+    setFormData((oldForm) => {
+      return { ...oldForm, content: { type: "", payload: "" } };
+    });
     if (videoRecorder) {
       stopStream(liveVideoRef.current.srcObject);
       videoRecorder.stop();
     }
     setVideoRecorder(null);
     setRecordedChunks([]);
-    if (recordedVideoRef.current) {
-      recordedVideoRef.current.src = null;
-    }
     setIsVideoRecorded(false);
     setVideoRecordingState("inactive");
   }
 
   function reinitializeAudioRecorder() {
-    setContent({ type: "", payload: "" });
+    setFormData((oldForm) => {
+      return { ...oldForm, content: { type: "", payload: "" } };
+    });
     if (audioRecorder) {
       stopStream(audioRecorder.stream);
       audioRecorder.stop();
@@ -129,9 +191,14 @@ const DayDescription = ({
     videoRecorder.onstop = () => {
       // console.log("This is recorded CHunks", recordedChunks);
       const recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
-      recordedVideoRef.current.src = URL.createObjectURL(recordedBlob);
+      setRecordedVideoURL(URL.createObjectURL(recordedBlob));
       setVideoRecordingState("inactive");
-      setContent({ type: "video/webm", payload: recordedBlob });
+      setFormData((oldForm) => {
+        return {
+          ...oldForm,
+          content: { type: "video/webm", payload: recordedBlob },
+        };
+      });
       setIsVideoRecorded(true);
       setRecordedChunks([]);
     };
@@ -143,7 +210,7 @@ const DayDescription = ({
 
   function deleteVideoRecording() {
     // console.log("deleting");
-    recordedVideoRef.current.src = null;
+    setRecordedVideoURL(null);
     setIsVideoRecorded(false);
     setVideoRecordingState("inactive");
     setRecordedChunks([]);
@@ -191,7 +258,12 @@ const DayDescription = ({
       const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
       const audioUrl = URL.createObjectURL(audioBlob);
       setAudioURL(audioUrl);
-      setContent({ type: "audio/webm", payload: audioBlob });
+      setFormData((oldForm) => {
+        return {
+          ...oldForm,
+          content: { type: "audio/webm", payload: audioBlob },
+        };
+      });
       setIsAudioRecorded(true);
       setAudioChunks([]);
       setAudioRecordingState("inactive");
@@ -208,8 +280,8 @@ const DayDescription = ({
     setAudioChunks([]);
   }
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">
+    <div>
+      <label className="block text-sm font-medium text-gray-700 pb-4">
         How was your day?*
       </label>
       <Tab.Group selectedIndex={selectedTab} onChange={handleMainTabChange}>
@@ -239,12 +311,15 @@ const DayDescription = ({
             {selectedTab === 1 ? "Record" : "Too tired to type?"}
           </Tab>
         </Tab.List>
-        <Tab.Panels className="mt-4">
+        <Tab.Panels className="mt-2">
           <Tab.Panel>
             <textarea
               value={content.payload}
               onChange={(e) =>
-                setContent({ type: "text", payload: e.target.value })
+                setFormData((oldForm) => ({
+                  ...oldForm,
+                  content: { type: "text", payload: e.target.value },
+                }))
               }
               placeholder="Write about your day..."
               rows={6}
@@ -253,7 +328,10 @@ const DayDescription = ({
           </Tab.Panel>
           <Tab.Panel>
             <div className="space-y-4">
-              <Tab.Group onChange={handleRecordingTypeChange}>
+              <Tab.Group
+                selectedIndex={recordingTab}
+                onChange={handleRecordingTypeChange}
+              >
                 <Tab.List className="flex flex-col sm:flex-col md:inline-flex md:flex-row rounded-lg bg-gray-100 p-1 mt-5 w-full md:w-auto">
                   <Tab
                     className={({ selected }) =>
@@ -380,7 +458,7 @@ const DayDescription = ({
                       >
                         <video
                           controls
-                          ref={recordedVideoRef}
+                          src={recordedVideoURL}
                           className={`w-full h-full object-cover`}
                         />
                       </div>
@@ -532,6 +610,47 @@ const DayDescription = ({
           </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-lg">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-yellow-100 p-2 rounded-full">
+                  <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600" />
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900">
+                  Confirm Tab Switch
+                </h4>
+              </div>
+            </div>
+
+            <p className="text-gray-600 leading-relaxed mb-6">
+              Switching tabs will delete your current{" "}
+              {selectedTab === 0
+                ? "text"
+                : recordingTab === 0
+                ? "video"
+                : "audio"}{" "}
+              content. Are you sure you want to continue?
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleCancelTabChange}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmTabChange}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

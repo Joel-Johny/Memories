@@ -6,35 +6,41 @@ import ProductivitySlider from "../components/ProductivitySlider";
 import MoodPicker from "../components/MoodPicker";
 import TitleNThumbnail from "../components/TitleNThumbnail";
 import DayDescription from "../components/DayDescription";
-import { addOrUpdateJournal } from "../api";
+import { useNavigate } from "react-router-dom";
+import { addOrUpdateJournal, fetchJournalByDate } from "../api";
+import { useAuth } from "../context/AuthContext";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 const JournalEntryForm = () => {
-  //States for journal Title and Thumbnail
-  const [title, setTitle] = useState("");
-  const [thumbnail, setThumbnail] = useState(null);
-
-  //States for journal Description Audio/Video/Text
-  const [content, setContent] = useState({ type: "", payload: "" });
-  const [selectedTab, setSelectedTab] = useState(0);
-
-  //State for journal Snapshot
-  const [snapPhotos, setSnapPhotos] = useState([]);
-  //States for journal Productivity and Mood
-  const [productivityRating, setProductivityRating] = useState(5);
-  const [selectedMood, setSelectedMood] = useState({
-    emoji: "😊",
-    label: "Happy",
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    thumbnail: { url: undefined, file: undefined },
+    content: {
+      type: "",
+      payload: "",
+    },
+    selectedTab: 0,
+    snapPhotos: { urls: [], files: [] },
+    productivityRating: 5,
+    selectedMood: {
+      emoji: "😊",
+      label: "Happy",
+    },
   });
 
-  //State for Error which will be used for recording error or api errors
   const [error, setError] = useState("");
+  const [journalExists, setJournalExists] = useState(false);
 
-  function validateForm() {
-    if (title.trim() === "") {
+  function validateForm(formData) {
+    if (formData.title.trim() === "") {
       setError("Journal Title cannot be empty");
       return false;
     }
-    if (content.type === "" || content.payload === "") {
+    if (formData.content.type === "" || formData.content.payload === "") {
       setError("Journal Description cannot be empty");
       return false;
     }
@@ -42,40 +48,54 @@ const JournalEntryForm = () => {
     setError("");
     return true;
   }
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const isValid = validateForm();
-    if (isValid) {
-      // Get current date
+    if (validateForm(formData)) {
+      setIsSubmitting(true);
       const currentDate = new Date().toISOString().split("T")[0];
+      const submissionData = new FormData();
 
-      // Create a FormData object
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("contentType", content.type);
-      if (content.type === "text") {
-        formData.append("contentPayload", content.payload);
+      submissionData.append("title", formData.title);
+      submissionData.append("contentType", formData.content.type);
+
+      if (formData.content.type === "text") {
+        submissionData.append("contentPayload", formData.content.payload);
       } else {
-        const recordingFile = new File([content.payload], "recording", {
-          type: content.payload.type,
-        });
-        console.log("This is the blob", content.payload);
-        console.log("This is the recording", recordingFile);
-        // downloadFile(recordingFile);
-        formData.append("contentPayload", recordingFile);
+        const recordingFile = new File(
+          [formData.content.payload],
+          "recording.webm",
+          { type: formData.content.type }
+        );
+        submissionData.append("contentPayload", recordingFile);
       }
-      formData.append("thumbnail", thumbnail); // Assuming thumbnail is a file (you'll need to handle this in the form input)
 
-      // Add snap photos to formData (handle if there are multiple files)
-      snapPhotos.forEach((photo) => {
-        formData.append("snapPhotos", photo);
+      if (formData.thumbnail) {
+        submissionData.append("thumbnail", formData.thumbnail.file);
+      }
+
+      formData.snapPhotos.files.forEach((photo) => {
+        submissionData.append("snapPhotos", photo);
       });
 
-      formData.append("productivityRating", productivityRating);
-      formData.append("selectedMood", JSON.stringify(selectedMood)); // Send as JSON string
-      formData.append("journalEntryDate", currentDate);
+      submissionData.append("productivityRating", formData.productivityRating);
+      submissionData.append(
+        "selectedMood",
+        JSON.stringify(formData.selectedMood)
+      );
+      submissionData.append("journalEntryDate", currentDate);
 
-      addOrUpdateJournal(formData);
+      try {
+        const response = await addOrUpdateJournal(submissionData);
+        if (response.status === 200) navigate("/dashboard");
+        setError("");
+      } catch (err) {
+        setError("Failed to submit journal entry. Please try again.");
+        if (err.response?.status === 400) logout();
+        console.error("Journal submission error:", err);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
   const downloadFile = (file) => {
@@ -95,13 +115,69 @@ const JournalEntryForm = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
+  useEffect(() => {
+    fetchTodaysJournal();
+  }, []);
+
+  async function fetchTodaysJournal() {
+    try {
+      setIsLoading(true);
+      const currentDate = new Date().toISOString().split("T")[0];
+      const currentJournal = await fetchJournalByDate(currentDate);
+
+      if (currentJournal) {
+        const thumbnailObject = {
+          url: currentJournal.thumbnail,
+          file: undefined,
+        };
+
+        const thumbnailFileResponse = await fetch(currentJournal.thumbnail);
+        const thumbnailFileBlob = await thumbnailFileResponse.blob();
+        const thumbnailFile = new File([thumbnailFileBlob], "thumbnail.jpg", {
+          type: thumbnailFileBlob.type,
+        });
+        thumbnailObject.file = thumbnailFile;
+
+        const snapPhotosObject = {
+          urls: currentJournal.snapPhotos,
+          files: [],
+        };
+
+        const photoPromises = currentJournal.snapPhotos.map(async (url) => {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          return new File([blob], "snapPhoto.jpg", { type: blob.type });
+        });
+
+        const photoFiles = await Promise.all(photoPromises);
+        snapPhotosObject.files = photoFiles;
+
+        if (currentJournal.content.type !== "text") {
+          const response = await fetch(currentJournal.content.payload);
+          const blob = await response.blob();
+          const file = new File([blob], "recording", { type: blob.type });
+          currentJournal.content.payload = file;
+        }
+
+        setJournalExists(true);
+        setFormData({
+          ...currentJournal,
+          thumbnail: thumbnailObject,
+          snapPhotos: snapPhotosObject,
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45 }}
-      className="w-full max-w-4xl mx-auto p-2 sm:p-4"
-    >
+    <div className="w-full max-w-4xl mx-auto p-2 sm:p-4">
       <div className="bg-white rounded-lg shadow-lg p-3 sm:p-6">
         <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
           Create New Journal Entry
@@ -114,53 +190,90 @@ const JournalEntryForm = () => {
             </div>
           )}
 
-          {/* Journal Title and Thumbnail Component */}
           <TitleNThumbnail
-            title={title}
-            setTitle={setTitle}
-            thumbnail={thumbnail}
-            setThumbnail={setThumbnail}
+            title={formData.title}
+            thumbnail={formData.thumbnail}
+            setFormData={setFormData}
           />
-
-          {/* Journal Description Component */}
           <DayDescription
-            content={content}
-            setContent={setContent}
-            selectedTab={selectedTab}
-            setSelectedTab={setSelectedTab}
+            content={formData.content}
             setError={setError}
+            setFormData={setFormData}
           />
-
-          {/*Memory Snap Upload */}
           <MemorySnapshot
-            snapPhotos={snapPhotos}
-            setSnapPhotos={setSnapPhotos}
+            snapPhotos={formData.snapPhotos}
+            setFormData={setFormData}
           />
-
-          {/*Productivity Slider*/}
           <ProductivitySlider
-            productivityRating={productivityRating}
-            setProductivityRating={setProductivityRating}
+            productivityRating={formData.productivityRating}
+            setFormData={setFormData}
+          />
+          <MoodPicker
+            selectedMood={formData.selectedMood}
+            setFormData={setFormData}
           />
 
-          {/*Mood Picker */}
-          <MoodPicker
-            selectedMood={selectedMood}
-            setSelectedMood={setSelectedMood}
-          />
-          {/* Save Button */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             type="submit"
-            className="w-full bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-md hover:bg-blue-700 flex items-center justify-center text-sm sm:text-base"
+            disabled={isSubmitting}
+            className="w-full bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-md hover:bg-blue-700 flex items-center justify-center text-sm sm:text-base disabled:bg-blue-400"
           >
-            <PaperAirplaneIcon className="w-5 h-5 mr-2" />
-            Save Journal Entry
+            {isSubmitting ? (
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                Saving...
+              </div>
+            ) : (
+              <>
+                <PaperAirplaneIcon className="w-5 h-5 mr-2" />
+                Save Journal Entry
+              </>
+            )}
           </motion.button>
         </form>
       </div>
-    </motion.div>
+
+      {journalExists && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white rounded-xl p-6 max-w-md w-full shadow-lg"
+          >
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-yellow-100 p-2 rounded-full">
+                  <PaperAirplaneIcon className="w-5 h-5 text-yellow-600" />
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900">
+                  Journal Entry Exists
+                </h4>
+              </div>
+            </div>
+
+            <p className="text-gray-600 leading-relaxed mb-6">
+              You have already created a journal entry for today. You can edit
+              or modify it if desired, but you may need to re-record your
+              audio/video content.
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setJournalExists(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Got it
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {isSubmitting && <LoadingSpinner />}
+    </div>
   );
 };
 
