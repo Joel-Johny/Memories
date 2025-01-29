@@ -9,7 +9,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import JournalEntryForm from "./pages/JournalEntryForm";
 import NotFound from "./pages/NotFound";
-
+import Memory from "./pages/Memory";
 function App() {
   return (
     <Router>
@@ -29,7 +29,14 @@ function App() {
                 </PrivateRoute>
               }
             />
-
+            <Route
+              path="/memory"
+              element={
+                <PrivateRoute>
+                  <Memory />
+                </PrivateRoute>
+              }
+            />
             <Route
               path="/new-memory"
               element={
