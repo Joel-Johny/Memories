@@ -8,10 +8,15 @@ import {
   PlayIcon,
   StopIcon,
   TrashIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 const DayDescription = ({ content, setError, setFormData }) => {
   const [selectedTab, setSelectedTab] = useState(0);
   const [recordingTab, setRecordingTab] = useState(0);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingTabChange, setPendingTabChange] = useState(null);
+  const [pendingRecordingTabChange, setPendingRecordingTabChange] =
+    useState(null);
 
   // Existing video refs and states
   const liveVideoRef = useRef(null);
@@ -59,16 +64,58 @@ const DayDescription = ({ content, setError, setFormData }) => {
     };
   }, []);
 
+  const hasContent = () => {
+    if (selectedTab === 0) {
+      return content.payload.trim().length > 0;
+    } else {
+      if (recordingTab === 0) {
+        return isVideoRecorded || videoRecordingState !== "inactive";
+      } else {
+        return isAudioRecorded || audioRecordingState !== "inactive";
+      }
+    }
+  };
+
   const handleMainTabChange = (index) => {
-    setSelectedTab(index);
-    reinitializeVideoRecorder();
-    reinitializeAudioRecorder();
+    if (hasContent()) {
+      setPendingTabChange(index);
+      setShowConfirmModal(true);
+    } else {
+      setSelectedTab(index);
+      reinitializeVideoRecorder();
+      reinitializeAudioRecorder();
+    }
   };
 
   const handleRecordingTypeChange = (index) => {
-    setRecordingTab(index);
+    if (hasContent()) {
+      setPendingRecordingTabChange(index);
+      setShowConfirmModal(true);
+    } else {
+      setRecordingTab(index);
+      reinitializeVideoRecorder();
+      reinitializeAudioRecorder();
+    }
+  };
+
+  const handleConfirmTabChange = () => {
+    if (pendingTabChange !== null) {
+      setSelectedTab(pendingTabChange);
+      setPendingTabChange(null);
+    }
+    if (pendingRecordingTabChange !== null) {
+      setRecordingTab(pendingRecordingTabChange);
+      setPendingRecordingTabChange(null);
+    }
     reinitializeVideoRecorder();
     reinitializeAudioRecorder();
+    setShowConfirmModal(false);
+  };
+
+  const handleCancelTabChange = () => {
+    setPendingTabChange(null);
+    setPendingRecordingTabChange(null);
+    setShowConfirmModal(false);
   };
 
   function reinitializeVideoRecorder() {
@@ -233,8 +280,8 @@ const DayDescription = ({ content, setError, setFormData }) => {
     setAudioChunks([]);
   }
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">
+    <div>
+      <label className="block text-sm font-medium text-gray-700 pb-4">
         How was your day?*
       </label>
       <Tab.Group selectedIndex={selectedTab} onChange={handleMainTabChange}>
@@ -264,7 +311,7 @@ const DayDescription = ({ content, setError, setFormData }) => {
             {selectedTab === 1 ? "Record" : "Too tired to type?"}
           </Tab>
         </Tab.List>
-        <Tab.Panels className="mt-4">
+        <Tab.Panels className="mt-2">
           <Tab.Panel>
             <textarea
               value={content.payload}
@@ -563,6 +610,47 @@ const DayDescription = ({ content, setError, setFormData }) => {
           </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-lg">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-yellow-100 p-2 rounded-full">
+                  <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600" />
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900">
+                  Confirm Tab Switch
+                </h4>
+              </div>
+            </div>
+
+            <p className="text-gray-600 leading-relaxed mb-6">
+              Switching tabs will delete your current{" "}
+              {selectedTab === 0
+                ? "text"
+                : recordingTab === 0
+                ? "video"
+                : "audio"}{" "}
+              content. Are you sure you want to continue?
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleCancelTabChange}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmTabChange}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
