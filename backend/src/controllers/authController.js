@@ -87,4 +87,12 @@ const verifyUser = async (req, res) => {
   }
 };
 
+const terminateAccount = async (req, res) => {
+  // Get the user ID from the request body
+  // fetch all journals of userId
+  // forEach journal
+  // delete cloudinary data helper fn
+  // delete journal
+  // Finally delete user
+};
 module.exports = { registerUser, loginUser, verifyUser };
