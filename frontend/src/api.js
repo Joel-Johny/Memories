@@ -30,7 +30,7 @@ export const addOrUpdateJournal = async (formData) => {
 
 export const fetchJournalByDate = async (date) => {
   try {
-    const response = await API.get(`/journals/${date}`);
+    const response = await API.get(`/journals/date?date=${date}`);
     return response.data;
   } catch (error) {
     console.log("No Journal found on the said date", error);

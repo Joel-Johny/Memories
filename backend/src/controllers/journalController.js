@@ -1,130 +1,9 @@
 const { cloudinary } = require("../middleware/multerCloudinaryMiddleware");
 const Journal = require("../models/Journal");
-const fs = require("fs/promises"); // For file system operations with promises
+const cleanupServerUploads = require("../utils/cleanupServerUploads");
+const journalValidation = require("../utils/journalValidation");
+const cleanupCloudinaryJournalData = require("../utils/deleteCloudinaryResource");
 
-const journalEntryValidation = ({
-  journalEntryDate,
-  title,
-  contentType,
-  productivityRating,
-  selectedMood,
-}) => {
-  // **Data Validation**
-  if (!journalEntryDate) {
-    return { status: "fail", message: "Journal entry date is required" };
-  }
-
-  if (!title) {
-    return { status: "fail", message: "Title is required" };
-  }
-
-  if (!contentType) {
-    return { status: "fail", message: "Content and its type are required" };
-  }
-
-  // Validate journalEntryDate
-  const currentDate = new Date().toISOString().split("T")[0];
-  if (new Date(journalEntryDate) < currentDate) {
-    // console.log(journalEntryDate, currentDate);
-    return {
-      status: "fail",
-      message: "Cannot add or update journals for past dates",
-    };
-  }
-
-  if (!productivityRating) {
-    return { status: "fail", message: "Productivity rating is required" };
-  }
-
-  if (selectedMood && typeof selectedMood !== "string") {
-    const mood = JSON.parse(selectedMood);
-    if (mood.emoji === "" || mood.label === "") {
-      return { status: "fail", message: "Mood is required" };
-    }
-  }
-
-  // If all validations pass
-  return { status: "success", message: "Validation passed" };
-};
-
-const cleanupUploads = async (files) => {
-  try {
-    // Loop through each field in `files`
-    for (const field in files) {
-      for (const file of files[field]) {
-        console.log(`Deleting file: ${file.path}`);
-        await fs.unlink(file.path); // Delete the file
-      }
-    }
-    console.log("All files uploaded in server cleaned up successfully");
-  } catch (err) {
-    console.error("Error while cleaning up uploads", err.message);
-  }
-};
-
-const cleanupCloudinaryData = async (userId) => {
-  // **Check for Existing Journal**
-  console.log("cloudinary cleanup");
-  const currentDate = new Date().toISOString().split("T")[0];
-
-  const existingJournal = await Journal.findOne({
-    user: userId,
-    date: currentDate,
-  });
-
-  if (existingJournal) {
-    console.log(
-      "Existing journal found. Deleting associated resources from cloudinary."
-    );
-    const deleteCloudinaryResource = async (
-      publicId,
-      resource_type = "image"
-    ) => {
-      try {
-        const result = await cloudinary.uploader.destroy(publicId, {
-          resource_type: resource_type,
-        });
-        console.log(`Deleted Result for url:`, publicId, result);
-      } catch (error) {
-        console.error(`Error deleting resource:`, error);
-      }
-    };
-    // **Delete Existing Resources from Cloudinary**
-    const defaultThumbnail =
-      "https://plus.unsplash.com/premium_photo-1664474619075-644dd191935f?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
-
-    if (
-      existingJournal.thumbnail &&
-      existingJournal.thumbnail !== defaultThumbnail
-    ) {
-      const publicId =
-        "memories-journal/thumbnails/" +
-        existingJournal.thumbnail.split("/").pop().split(".")[0];
-      deleteCloudinaryResource(publicId);
-    }
-
-    if (existingJournal.snapPhotos && existingJournal.snapPhotos.length) {
-      for (const snapPhoto of existingJournal.snapPhotos) {
-        const publicId =
-          "memories-journal/snapshots/" +
-          snapPhoto.split("/").pop().split(".")[0];
-        deleteCloudinaryResource(publicId);
-      }
-    }
-
-    if (
-      existingJournal.content.type !== "text" &&
-      existingJournal.content.payload
-    ) {
-      const publicId =
-        "memories-journal/contents/" +
-        existingJournal.content.payload.split("/").pop().split(".")[0];
-      deleteCloudinaryResource(publicId, "video");
-    }
-
-    console.log("All associated resources deleted.");
-  }
-};
 const addOrUpdateJournal = async (req, res) => {
   const {
     journalEntryDate,
@@ -139,7 +18,7 @@ const addOrUpdateJournal = async (req, res) => {
 
   // Validate the journal entry
   // console.log("Running validation");
-  const validationResult = journalEntryValidation(req.body);
+  const validationResult = journalValidation(req.body);
 
   if (validationResult.status === "fail") {
     return res.status(400).json({ message: validationResult.message });
@@ -148,7 +27,12 @@ const addOrUpdateJournal = async (req, res) => {
   // console.log("Validation success");
   try {
     // **Handle Thumbnail Upload**
-    await cleanupCloudinaryData(req.user.id);
+    const existingJournal = await Journal.findOne({
+      user: req.user.id,
+      date: journalEntryDate,
+    });
+    if (existingJournal) await cleanupCloudinaryJournalData(existingJournal);
+
     let thumbnailUrl =
       "https://plus.unsplash.com/premium_photo-1664474619075-644dd191935f?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
     if (req.files.thumbnail) {
@@ -219,7 +103,7 @@ const addOrUpdateJournal = async (req, res) => {
     return res.status(500).json({ message: "Server error", error });
   } finally {
     // **Cleanup Uploaded Files**
-    await cleanupUploads(req.files);
+    await cleanupServerUploads(req.files);
   }
 };
 const journalByDate = async (req, res) => {
@@ -227,7 +111,7 @@ const journalByDate = async (req, res) => {
   try {
     const journal = await Journal.findOne({
       user: req.user.id,
-      date: req.params.date,
+      date: req.query.date,
     }).select("-user");
     if (!journal) {
       return res.status(404).json({ message: "Journal not found" });
@@ -239,10 +123,59 @@ const journalByDate = async (req, res) => {
 };
 const getAllJournal = async (req, res) => {
   try {
-    const journals = await Journal.find({ user: req.user._id });
+    const journals = await Journal.find({ user: req.user.id });
     res.status(200).json(journals);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
-module.exports = { addOrUpdateJournal, getAllJournal, journalByDate };
+const deleteJournal = async (req, res) => {
+  try {
+    const { journalEntryDate } = req.body;
+    if (!journalEntryDate) {
+      return res
+        .status(400)
+        .json({ message: "Journal entry date is required" });
+    }
+    const existingJournal = await Journal.findOne({
+      user: req.user.id,
+      date: journalEntryDate,
+    });
+
+    if (!existingJournal) {
+      return res.status(404).json({ message: "Journal not found" });
+    }
+    await cleanupCloudinaryJournalData(existingJournal);
+
+    await existingJournal.deleteOne();
+    res.status(200).json({ message: "Journal deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getJournalEntryDates = async (req, res) => {
+  try {
+    const userId = req.user.id; // Get user ID from request
+
+    // Fetch only the `date` field of journals, sorted in ascending order
+    const journalDates = await Journal.find({ user: userId })
+      .select("date -_id")
+      .sort("date");
+
+    // Extract dates into an array
+    const dates = journalDates.map((journal) => journal.date);
+    return res.status(200).json({ dates });
+  } catch (error) {
+    console.error("Error fetching journal entry dates:", error);
+    return res.status(500).json({ message: "Server error", error });
+  }
+};
+
+module.exports = {
+  addOrUpdateJournal,
+  getAllJournal,
+  journalByDate,
+  deleteJournal,
+  getJournalEntryDates,
+};
