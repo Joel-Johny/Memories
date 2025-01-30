@@ -111,7 +111,7 @@ const journalByDate = async (req, res) => {
   try {
     const journal = await Journal.findOne({
       user: req.user.id,
-      date: req.params.date,
+      date: req.query.date,
     }).select("-user");
     if (!journal) {
       return res.status(404).json({ message: "Journal not found" });
@@ -123,7 +123,7 @@ const journalByDate = async (req, res) => {
 };
 const getAllJournal = async (req, res) => {
   try {
-    const journals = await Journal.find({ user: req.user._id });
+    const journals = await Journal.find({ user: req.user.id });
     res.status(200).json(journals);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
@@ -153,9 +153,29 @@ const deleteJournal = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+const getJournalEntryDates = async (req, res) => {
+  try {
+    const userId = req.user.id; // Get user ID from request
+
+    // Fetch only the `date` field of journals, sorted in ascending order
+    const journalDates = await Journal.find({ user: userId })
+      .select("date -_id")
+      .sort("date");
+
+    // Extract dates into an array
+    const dates = journalDates.map((journal) => journal.date);
+    return res.status(200).json({ dates });
+  } catch (error) {
+    console.error("Error fetching journal entry dates:", error);
+    return res.status(500).json({ message: "Server error", error });
+  }
+};
+
 module.exports = {
   addOrUpdateJournal,
   getAllJournal,
   journalByDate,
   deleteJournal,
+  getJournalEntryDates,
 };
