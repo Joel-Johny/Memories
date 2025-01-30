@@ -37,3 +37,13 @@ export const fetchJournalByDate = async (date) => {
     throw error;
   }
 };
+
+export const getJournalEntryDates = async () => {
+  try {
+    const response = await API.get("/journals/journal-entry-dates");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching journal entry dates:", error);
+    throw error;
+  }
+};

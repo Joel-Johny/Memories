@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog } from "@headlessui/react";
-import { fetchJournalByDate } from "../api";
+import { fetchJournalByDate, getJournalEntryDates } from "../api";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -14,7 +14,7 @@ import {
   ChartBarIcon,
 } from "@heroicons/react/24/outline";
 import LoadingSpinner from "../components/LoadingSpinner";
-
+import CalendarModal from "../components/CalendarModal";
 const Memory = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -24,28 +24,32 @@ const Memory = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const date = searchParams.get("date");
+  const searchDate = searchParams.get("date");
+  const [journalDates, setJournalDates] = useState([]);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   useEffect(() => {
-    const loadJournal = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchJournalByDate(date);
-        setJournal(data);
-        setError(null);
-      } catch (err) {
-        setError("No journal entry found for this date");
-        setJournal(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (date) {
+    if (searchDate) {
       loadJournal();
     }
-  }, [date]);
-
+  }, []);
+  const loadJournal = async () => {
+    try {
+      setLoading(true);
+      const dates = await getJournalEntryDates();
+      if (dates.includes(searchDate)) {
+        const data = await fetchJournalByDate(searchDate);
+        setJournalDates(dates);
+        setJournal(data);
+        setError(null);
+      }
+    } catch (err) {
+      setError("No journal entry found for this date");
+      setJournal(null);
+    } finally {
+      setLoading(false);
+    }
+  };
   const nextSlide = () => {
     setCurrentSlide((prev) =>
       prev === journal?.snapPhotos?.length - 1 ? 0 : prev + 1
@@ -121,7 +125,7 @@ const Memory = () => {
           <motion.button
             initial={{ x: 20 }}
             animate={{ x: 0 }}
-            onClick={() => navigate("/calendar")}
+            onClick={() => setShowCalendar(true)}
             className="px-4 py-2 bg-white text-gray-700 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
           >
             <CalendarIcon className="w-5 h-5" />
@@ -309,7 +313,12 @@ const Memory = () => {
           </div>
         </motion.div>
       </div>
-
+      {showCalendar && (
+        <CalendarModal
+          setShowCalendar={setShowCalendar}
+          journalDates={journalDates}
+        />
+      )}
       {/* Delete Confirmation Modal */}
       <Dialog
         open={isDeleteModalOpen}

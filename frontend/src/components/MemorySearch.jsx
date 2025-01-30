@@ -8,7 +8,7 @@ const MemorySearch = ({ searchQuery, setSearchQuery, setShowCalendar }) => {
       <div className="relative flex-1 min-w-0">
         <input
           type="text"
-          placeholder="Search memories..."
+          placeholder="Search Memory by Title..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full pl-4 pr-10 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
