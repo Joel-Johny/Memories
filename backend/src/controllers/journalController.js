@@ -165,7 +165,7 @@ const getJournalEntryDates = async (req, res) => {
 
     // Extract dates into an array
     const dates = journalDates.map((journal) => journal.date);
-    return res.status(200).json({ dates });
+    return res.status(200).json(dates);
   } catch (error) {
     console.error("Error fetching journal entry dates:", error);
     return res.status(500).json({ message: "Server error", error });
