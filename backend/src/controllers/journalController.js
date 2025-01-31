@@ -121,11 +121,23 @@ const journalByDate = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-const getAllJournal = async (req, res) => {
+const paginatedJournal = async (req, res) => {
   try {
-    const journals = await Journal.find({ user: req.user.id });
-    res.status(200).json(journals);
+    const userId = req.user.id;
+    const skip = parseInt(req.query.skip) || 0; // Default skip = 0
+    const limit = 3;
+
+    const journals = await Journal.find({ user: userId })
+      .sort({ date: -1 }) // Sort by date (newest first)
+      .skip(skip)
+      .limit(limit);
+
+    const totalJournals = await Journal.countDocuments({ user: userId });
+    const hasMore = skip + limit < totalJournals; // Check if more journals exist
+
+    res.json({ journals, hasMore });
   } catch (error) {
+    console.error("Error fetching paginated journals:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -165,6 +177,7 @@ const getJournalEntryDates = async (req, res) => {
 
     // Extract dates into an array
     const dates = journalDates.map((journal) => journal.date);
+    // console.log(dates);
     return res.status(200).json(dates);
   } catch (error) {
     console.error("Error fetching journal entry dates:", error);
@@ -172,10 +185,63 @@ const getJournalEntryDates = async (req, res) => {
   }
 };
 
+const metrics = async (req, res) => {
+  try {
+    const userId = req.user.id; // Authenticated user's ID
+
+    // 1. Total Journals
+    const totalJournals = await Journal.countDocuments({ user: userId });
+
+    // 2. Journals This Month
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999
+    );
+
+    // console.log("This is start of month", startOfMonth);
+    // console.log("This is end of month", endOfMonth);
+    const thisMonthJournals = await Journal.countDocuments({
+      user: userId,
+      $expr: {
+        $and: [
+          {
+            $gte: [{ $dateFromString: { dateString: "$date" } }, startOfMonth],
+          },
+          { $lte: [{ $dateFromString: { dateString: "$date" } }, endOfMonth] },
+        ],
+      },
+    });
+
+    // 3. Happy Mood Days
+    const happyMoodDays = await Journal.countDocuments({
+      user: userId,
+      "selectedMood.label": "Happy",
+    });
+
+    // Send response
+    res.json({
+      totalJournals,
+      thisMonthJournals,
+      happyMoodDays,
+    });
+  } catch (error) {
+    console.error("Error fetching metrics:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 module.exports = {
   addOrUpdateJournal,
-  getAllJournal,
+  paginatedJournal,
   journalByDate,
   deleteJournal,
   getJournalEntryDates,
+  metrics,
 };
