@@ -172,10 +172,53 @@ const getJournalEntryDates = async (req, res) => {
   }
 };
 
+const metrics = async (req, res) => {
+  try {
+    const userId = req.user.id; // Authenticated user's ID
+
+    // 1. Total Journals
+    const totalJournals = await Journal.countDocuments({ user: userId });
+
+    // 2. Journals This Month
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const thisMonthJournals = await Journal.countDocuments({
+      user: userId,
+      $expr: {
+        $and: [
+          {
+            $gte: [{ $dateFromString: { dateString: "$date" } }, startOfMonth],
+          },
+          { $lte: [{ $dateFromString: { dateString: "$date" } }, endOfMonth] },
+        ],
+      },
+    });
+
+    // 3. Happy Mood Days
+    const happyMoodDays = await Journal.countDocuments({
+      user: userId,
+      "selectedMood.label": "Happy",
+    });
+
+    // Send response
+    res.json({
+      totalJournals,
+      thisMonthJournals,
+      happyMoodDays,
+    });
+  } catch (error) {
+    console.error("Error fetching metrics:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 module.exports = {
   addOrUpdateJournal,
   getAllJournal,
   journalByDate,
   deleteJournal,
   getJournalEntryDates,
+  metrics,
 };

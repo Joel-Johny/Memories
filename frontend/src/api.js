@@ -47,3 +47,13 @@ export const getJournalEntryDates = async () => {
     throw error;
   }
 };
+
+export const getJournalMetrics = async () => {
+  try {
+    const response = await API.get("/journals/metrics");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching journal metrics:", error);
+    throw error;
+  }
+};

@@ -6,7 +6,8 @@ import { useAuth } from "../context/AuthContext";
 import "react-calendar/dist/Calendar.css";
 import MemoryCard from "../components/MemoryCard";
 import CalendarModal from "../components/CalendarModal";
-import { getJournalEntryDates } from "../api";
+import { getJournalEntryDates, getJournalMetrics } from "../api";
+import { set } from "date-fns";
 // Dummy data for demonstration
 const dummyMemories = [
   {
@@ -35,6 +36,7 @@ export default function Dashboard() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [journalDates, setJournalDates] = useState([]);
+  const [metrics, setMetrics] = useState({});
   const { user } = useAuth();
 
   // Function to check if a date has a journal entry
@@ -43,6 +45,8 @@ export default function Dashboard() {
   }, []);
   const fetchDashboardData = async () => {
     const dates = await getJournalEntryDates();
+    const metrics = await getJournalMetrics();
+    setMetrics(metrics);
     setJournalDates(dates);
   };
   return (
@@ -66,7 +70,7 @@ export default function Dashboard() {
                   Total Memories
                 </h3>
                 <p className="text-3xl font-bold text-blue-600">
-                  {dummyMemories.length}
+                  {metrics?.totalJournals}
                 </p>
               </div>
             </div>
@@ -78,7 +82,9 @@ export default function Dashboard() {
                 <h3 className="text-xl font-semibold text-gray-800">
                   This Month
                 </h3>
-                <p className="text-3xl font-bold text-green-600">12</p>
+                <p className="text-3xl font-bold text-green-600">
+                  {metrics?.thisMonthJournals}
+                </p>
               </div>
             </div>
           </div>
@@ -89,7 +95,9 @@ export default function Dashboard() {
                 <h3 className="text-xl font-semibold text-gray-800">
                   Happy Days
                 </h3>
-                <p className="text-3xl font-bold text-yellow-600">28</p>
+                <p className="text-3xl font-bold text-yellow-600">
+                  {metrics?.happyMoodDays}
+                </p>
               </div>
             </div>
           </div>

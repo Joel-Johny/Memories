@@ -6,6 +6,7 @@ const {
   journalByDate,
   deleteJournal,
   getJournalEntryDates,
+  metrics,
 } = require("../controllers/journalController");
 const { protect } = require("../middleware/authMiddleware");
 const { upload } = require("../middleware/multerCloudinaryMiddleware");
@@ -16,5 +17,6 @@ router.get("/date", protect, upload, journalByDate);
 router.get("/all", protect, getAllJournal); //need to rework on this route for pagination?
 router.post("/deleteJournal", protect, deleteJournal);
 router.get("/journal-entry-dates", protect, getJournalEntryDates);
+router.get("/metrics", protect, metrics);
 
 module.exports = router;
