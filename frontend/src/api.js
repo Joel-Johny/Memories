@@ -57,3 +57,13 @@ export const getJournalMetrics = async () => {
     throw error;
   }
 };
+
+export const getPaginatedJournal = async (skip = 0) => {
+  try {
+    const response = await API.get(`/journals/paginated?skip=${skip}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching paginated journal:", error);
+    throw error;
+  }
+};
