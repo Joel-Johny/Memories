@@ -1,5 +1,10 @@
+import { motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
-import { BookOpenIcon, CalendarIcon } from "@heroicons/react/24/outline";
+import {
+  BookOpenIcon,
+  CalendarIcon,
+  PlusIcon,
+} from "@heroicons/react/24/outline";
 import MemorySearch from "../components/MemorySearch";
 import "react-calendar/dist/Calendar.css";
 import MemoryCard from "../components/MemoryCard";
@@ -9,8 +14,10 @@ import {
   getJournalMetrics,
   getPaginatedJournal,
 } from "../api";
+import { useNavigate } from "react-router-dom"; // Assuming you're using React Router
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [showCalendar, setShowCalendar] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [journalDates, setJournalDates] = useState([]);
@@ -29,7 +36,7 @@ export default function Dashboard() {
     const metrics = await getJournalMetrics();
     setMetrics(metrics);
     setJournalDates(dates);
-    fetchJournals();
+    if (dates.length > 0) fetchJournals();
   };
 
   // Fetch paginated journals
@@ -47,11 +54,14 @@ export default function Dashboard() {
     }
   };
 
+  const handleCreateMemory = () => {
+    navigate("/create-memory"); // Adjust the route as needed
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats and Calendar Button */}
+        {/* Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Total Memories */}
           <div className="bg-white rounded-xl shadow-sm p-6">
@@ -62,7 +72,7 @@ export default function Dashboard() {
                   Total Memories
                 </h3>
                 <p className="text-3xl font-bold text-blue-600">
-                  {metrics?.totalJournals}
+                  {metrics?.totalJournals || 0}
                 </p>
               </div>
             </div>
@@ -76,7 +86,7 @@ export default function Dashboard() {
                   This Month
                 </h3>
                 <p className="text-3xl font-bold text-green-600">
-                  {metrics?.thisMonthJournals}
+                  {metrics?.thisMonthJournals || 0}
                 </p>
               </div>
             </div>
@@ -90,7 +100,7 @@ export default function Dashboard() {
                   Happy Days
                 </h3>
                 <p className="text-3xl font-bold text-yellow-600">
-                  {metrics?.happyMoodDays}
+                  {metrics?.happyMoodDays || 0}
                 </p>
               </div>
             </div>
@@ -117,29 +127,51 @@ export default function Dashboard() {
           <h2 className="text-xl font-semibold text-gray-800 mb-6">
             Recent Memories
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {journals.map((journal) => (
-              <MemoryCard
-                key={journal._id}
-                memory={{
-                  id: journal._id,
-                  title: journal.title,
-                  date: journal.date,
-                  mood: journal.selectedMood.emoji,
-                  thumbnail: journal.thumbnail,
-                }}
-              />
-            ))}
-          </div>
-          {/* Load More Button */}
-          {hasMore && (
-            <button
-              onClick={() => fetchJournals(journals.length)}
-              disabled={isLoading}
-              className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-lg disabled:bg-gray-400"
-            >
-              {isLoading ? "Loading..." : "Load More"}
-            </button>
+
+          {journals.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm p-8 text-center flex flex-col items-center justify-center ">
+              <div className="text-center">
+                <p className="text-xl text-gray-600 mb-4">
+                  No memories found, create one!
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate("/new-memory")}
+                  className="flex items-center justify-center mx-auto gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all whitespace-nowrap"
+                >
+                  <PlusIcon className="h-5 w-5" />
+                  <span>Create a Memory</span>
+                </motion.button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {journals.map((journal) => (
+                  <MemoryCard
+                    key={journal._id}
+                    memory={{
+                      id: journal._id,
+                      title: journal.title,
+                      date: journal.date,
+                      mood: journal.selectedMood.emoji,
+                      thumbnail: journal.thumbnail,
+                    }}
+                  />
+                ))}
+              </div>
+              {/* Load More Button */}
+              {hasMore && (
+                <button
+                  onClick={() => fetchJournals(journals.length)}
+                  disabled={isLoading}
+                  className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-lg disabled:bg-gray-400"
+                >
+                  {isLoading ? "Loading..." : "Load More"}
+                </button>
+              )}
+            </>
           )}
         </div>
       </main>

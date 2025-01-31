@@ -67,3 +67,15 @@ export const getPaginatedJournal = async (skip = 0) => {
     throw error;
   }
 };
+
+export const deleteJournal = async (journalEntryDate) => {
+  try {
+    const response = await API.post(`/journals/deleteJournal`, {
+      journalEntryDate,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting journal:", error);
+    throw error;
+  }
+};

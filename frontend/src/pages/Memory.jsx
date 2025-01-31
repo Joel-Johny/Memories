@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog } from "@headlessui/react";
-import { fetchJournalByDate, getJournalEntryDates } from "../api";
+import {
+  deleteJournal,
+  fetchJournalByDate,
+  getJournalEntryDates,
+} from "../api";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -63,8 +67,18 @@ const Memory = () => {
   };
 
   const handleDelete = async () => {
-    setIsDeleteModalOpen(false);
-    navigate("/dashboard");
+    try {
+      // Set loading state before deletion
+      setLoading(true);
+      await deleteJournal(journal.date);
+      setIsDeleteModalOpen(false);
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error deleting memory:", error);
+    } finally {
+      // Ensure loading state is reset
+      setLoading(false);
+    }
   };
 
   if (loading) {
