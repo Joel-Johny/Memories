@@ -8,11 +8,9 @@ import TitleNThumbnail from "../components/TitleNThumbnail";
 import DayDescription from "../components/DayDescription";
 import { useNavigate } from "react-router-dom";
 import { addOrUpdateJournal, fetchJournalByDate } from "../api";
-import { useAuth } from "../context/AuthContext";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 const JournalEntryForm = () => {
-  const { logout } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,7 +89,6 @@ const JournalEntryForm = () => {
         setError("");
       } catch (err) {
         setError("Failed to submit journal entry. Please try again.");
-        if (err.response?.status === 400) logout();
         console.error("Journal submission error:", err);
       } finally {
         setIsSubmitting(false);
