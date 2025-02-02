@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-
+import LoadingSpinner from "../components/LoadingSpinner";
 const Register = () => {
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -21,19 +22,25 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
     }
     try {
-      await register({
+      const res = await register({
         name: formData.name,
         email: formData.email,
         password: formData.password,
       });
-      navigate("/login");
+      setError(res + " Redirecting user to login page...");
+      setTimeout(() => {
+        navigate("/login");
+      }, 4000);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,6 +52,7 @@ const Register = () => {
         transition={{ duration: 0.6 }}
         className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl"
       >
+        {loading && <LoadingSpinner />}
         <div>
           <motion.h2
             initial={{ opacity: 0 }}

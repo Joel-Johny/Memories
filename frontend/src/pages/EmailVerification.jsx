@@ -5,12 +5,12 @@ import { useNavigate } from "react-router-dom";
 
 export default function EmailVerification() {
   const authToken = localStorage.getItem("token");
+  const navigate = useNavigate();
   if (authToken) navigate("/dashboard");
   const [searchParams] = useSearchParams();
   const [message, setMessage] = useState("Verifying your email...");
   const [isError, setIsError] = useState(false);
   const { verifyEmail } = useAuth();
-  const navigate = useNavigate();
   useEffect(() => {
     const emailVerification = async () => {
       try {

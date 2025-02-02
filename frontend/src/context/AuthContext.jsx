@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
       const { token, user } = response.data;
       localStorage.setItem("token", token);
       setUser(user);
-      return true;
+      return response.data.message;
     } catch (error) {
       throw new Error(error.response?.data?.message || "Registration failed");
     }
