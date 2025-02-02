@@ -58,25 +58,24 @@ const registerUser = async (req, res) => {
     });
 
     // Save the new user first so we have a valid _id for the magic link.
-    await newUser.save();
 
     // Generate a verification token.
     const token = uuidv4();
 
+    // Send the verification email with the magic link.
+    await sendVerificationEmail(newUser.email, token);
     // Save the magic link for email verification.
     await EmailVerificationMagicLink.create({
       token,
       userId: newUser._id,
     });
-
-    // Send the verification email with the magic link.
-    await sendVerificationEmail(newUser.email, token);
-
+    await newUser.save();
     res.status(201).json({
       message:
         "User registered successfully. Please check your email to verify your account.",
     });
   } catch (error) {
+    // console.log(error);
     res.status(500).json({ message: "Server error" });
   }
 };
