@@ -61,9 +61,9 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    if (!user.verified) {
+    if (!user?.verified) {
       return res.status(403).json({
-        error: "Please verify your email before logging in",
+        message: "Please verify your email before logging in!",
       });
     }
     // Compare the entered password with the hashed password
