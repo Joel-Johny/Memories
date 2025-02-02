@@ -38,6 +38,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const verifyEmail = async (token) => {
+    try {
+      const response = await axios.get(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/auth/verify-email?token=${token}`
+      );
+      return response.data;
+    } catch (error) {
+      // console.log("contenxtt", error.response?.data?.message);
+      throw new Error(error.response?.data?.message || "Verification failed");
+    }
+  };
   const login = async (email, password) => {
     try {
       const response = await axios.post(
@@ -49,6 +62,7 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       return true;
     } catch (error) {
+      // console.log("contenxr", error);
       throw new Error(error.response?.data?.message || "Login failed");
     }
   };
@@ -62,7 +76,7 @@ export const AuthProvider = ({ children }) => {
       const { token, user } = response.data;
       localStorage.setItem("token", token);
       setUser(user);
-      return true;
+      return response.data.message;
     } catch (error) {
       throw new Error(error.response?.data?.message || "Registration failed");
     }
@@ -74,7 +88,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider
+      value={{ user, login, register, logout, loading, verifyEmail }}
+    >
       {children}
     </AuthContext.Provider>
   );

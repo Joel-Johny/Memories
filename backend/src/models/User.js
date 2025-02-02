@@ -11,6 +11,10 @@ const UserSchema = new mongoose.Schema({
     unique: true,
   },
   password: { type: String, required: true },
+  verified: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Create model
