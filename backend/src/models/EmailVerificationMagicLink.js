@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const magicLinkSchema = new mongoose.Schema({
+const emailVerificationMagicLinkSchema = new mongoose.Schema({
   token: {
     type: String,
     required: true,
@@ -18,4 +18,8 @@ const magicLinkSchema = new mongoose.Schema({
   },
 });
 
-export default mongoose.model("MagicLink", magicLinkSchema);
+const EmailVerificationMagicLink = mongoose.model(
+  "EmailVerificationMagicLink",
+  emailVerificationMagicLinkSchema
+);
+export default EmailVerificationMagicLink;

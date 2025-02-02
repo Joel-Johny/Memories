@@ -1,7 +1,9 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User"); // Assuming your User model is here
-
+import { v4 as uuidv4 } from "uuid";
+import EmailVerificationMagicLink from "../models/EmailVerificationMagicLink.js";
+import { sendVerificationEmail } from "../utils/mailer.js";
 // Controller function to register a new user
 const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
@@ -24,11 +26,24 @@ const registerUser = async (req, res) => {
       email,
       password: hashedPassword, // Store the hashed password
     });
+    // Generate verification token
+    const token = uuidv4();
+
+    // Save magic link
+    await EmailVerificationMagicLink.create({
+      token,
+      userId: newUser._id,
+    });
+
+    await sendVerificationEmail(newUser.email, token);
 
     // Save the user
     await newUser.save();
 
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(201).json({
+      message:
+        "User registered successfully. Please check your email to verify your account.",
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
@@ -46,6 +61,11 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    if (!user.verified) {
+      return res.status(403).json({
+        error: "Please verify your email before logging in",
+      });
+    }
     // Compare the entered password with the hashed password
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -87,4 +107,24 @@ const verifyUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, verifyUser };
+const verifyUserEmail = async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    // Find and validate token
+    const magicLink = await EmailVerificationMagicLink.findOneAndDelete({
+      token,
+    });
+    if (!magicLink)
+      return res.status(400).json({ error: "Invalid or expired token" });
+
+    // Update user verification status
+    await User.findByIdAndUpdate(magicLink.userId, { verified: true });
+
+    res.status(200).json({ message: "Email verified successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Email verification failed" });
+  }
+};
+
+module.exports = { registerUser, loginUser, verifyUser, verifyUserEmail };
