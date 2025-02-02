@@ -10,35 +10,67 @@ const registerUser = async (req, res) => {
 
   try {
     // Check if user already exists
-    const userExists = await User.findOne({ email });
+    let user = await User.findOne({ email });
 
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
+    // If user exists...
+    if (user) {
+      // If the user is verified, no need to register again.
+      if (user.verified) {
+        return res.status(400).json({
+          message: "User already exists and is verified. Please login.",
+        });
+      } else {
+        // User exists but is not verified.
+        // Look for an existing magic link.
+        let magicLink = await EmailVerificationMagicLink.findOne({
+          userId: user._id,
+        });
+        if (!magicLink) {
+          // If no magic link exists, generate a new token.
+          const token = uuidv4();
+          magicLink = await EmailVerificationMagicLink.create({
+            token,
+            userId: user._id,
+          });
+          await sendVerificationEmail(user.email, token);
+        } else {
+          // If a magic link already exists, you may choose to re-send it.
+          await sendVerificationEmail(user.email, magicLink.token);
+        }
+        return res.status(200).json({
+          message:
+            "Verification email sent. Please check your email to verify your account.",
+        });
+      }
     }
 
-    // Hash the password before saving
+    // If user does not exist, create a new user.
+    // Hash the password before saving.
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create new user with the hashed password
+    // Create new user with verified flag set to false.
     const newUser = new User({
       name,
       email,
-      password: hashedPassword, // Store the hashed password
+      password: hashedPassword,
+      verified: false,
     });
-    // Generate verification token
+
+    // Save the new user first so we have a valid _id for the magic link.
+    await newUser.save();
+
+    // Generate a verification token.
     const token = uuidv4();
 
-    // Save magic link
+    // Save the magic link for email verification.
     await EmailVerificationMagicLink.create({
       token,
       userId: newUser._id,
     });
 
+    // Send the verification email with the magic link.
     await sendVerificationEmail(newUser.email, token);
-
-    // Save the user
-    await newUser.save();
 
     res.status(201).json({
       message:
@@ -110,20 +142,19 @@ const verifyUser = async (req, res) => {
 const verifyUserEmail = async (req, res) => {
   try {
     const { token } = req.query;
-
     // Find and validate token
     const magicLink = await EmailVerificationMagicLink.findOneAndDelete({
       token,
     });
     if (!magicLink)
-      return res.status(400).json({ error: "Invalid or expired token" });
+      return res.status(400).json({ message: "Invalid or expired token!" });
 
     // Update user verification status
     await User.findByIdAndUpdate(magicLink.userId, { verified: true });
 
-    res.status(200).json({ message: "Email verified successfully" });
+    res.status(200).json({ message: "Email verified successfully!" });
   } catch (error) {
-    res.status(500).json({ error: "Email verification failed" });
+    res.status(500).json({ message: "Email verification failed!" });
   }
 };
 

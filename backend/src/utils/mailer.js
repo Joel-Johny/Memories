@@ -28,7 +28,7 @@ sendVerificationEmail = async (email, token) => {
         text-decoration: none;
         border-radius: 5px;
       ">Verify Email</a>
-      <p>This link will expire in 1 hour.</p>
+      <p>This link will expire in 1 hour.If expired, please register again.</p>
     `,
   };
 

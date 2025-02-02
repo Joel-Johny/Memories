@@ -18,6 +18,7 @@ const Login = () => {
       await login(email, password);
       navigate("/dashboard");
     } catch (err) {
+      // console.log("carch jsx", err);
       setError(err.message);
     }
   };
