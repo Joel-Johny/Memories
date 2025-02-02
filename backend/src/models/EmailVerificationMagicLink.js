@@ -1,5 +1,4 @@
-import mongoose from "mongoose";
-
+const mongoose = require("mongoose");
 const emailVerificationMagicLinkSchema = new mongoose.Schema({
   token: {
     type: String,
@@ -22,4 +21,4 @@ const EmailVerificationMagicLink = mongoose.model(
   "EmailVerificationMagicLink",
   emailVerificationMagicLinkSchema
 );
-export default EmailVerificationMagicLink;
+module.exports = EmailVerificationMagicLink;

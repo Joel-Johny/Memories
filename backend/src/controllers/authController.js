@@ -1,9 +1,9 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User"); // Assuming your User model is here
-import { v4 as uuidv4 } from "uuid";
-import EmailVerificationMagicLink from "../models/EmailVerificationMagicLink.js";
-import { sendVerificationEmail } from "../utils/mailer.js";
+const uuidv4 = require("uuid").v4;
+const EmailVerificationMagicLink = require("../models/EmailVerificationMagicLink");
+const { sendVerificationEmail } = require("../utils/mailer.js");
 // Controller function to register a new user
 const registerUser = async (req, res) => {
   const { name, email, password } = req.body;

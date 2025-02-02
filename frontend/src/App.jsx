@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import JournalEntryForm from "./pages/JournalEntryForm";
 import NotFound from "./pages/NotFound";
 import Memory from "./pages/Memory";
+import EmailVerification from "./pages/EmailVerification";
 function App() {
   return (
     <Router>
@@ -20,6 +21,7 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<EmailVerification />} />
 
             <Route
               path="/dashboard"

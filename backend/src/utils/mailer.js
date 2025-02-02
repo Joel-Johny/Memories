@@ -1,5 +1,4 @@
-import nodemailer from "nodemailer";
-
+const nodemailer = require("nodemailer");
 const transporter = nodemailer.createTransport({
   service: process.env.EMAIL_SERVICE,
   host: process.env.EMAIL_HOST,
@@ -11,7 +10,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const sendVerificationEmail = async (email, token) => {
+sendVerificationEmail = async (email, token) => {
   const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${token}`;
 
   const mailOptions = {
@@ -35,3 +34,5 @@ export const sendVerificationEmail = async (email, token) => {
 
   return transporter.sendMail(mailOptions);
 };
+
+module.exports = { sendVerificationEmail };
