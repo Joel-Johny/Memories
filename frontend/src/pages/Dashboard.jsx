@@ -62,7 +62,7 @@ export default function Dashboard() {
         <motion.h3
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-xl font-bold text-blue-600 mb-8 animate-fade-in text-right"
+          className="text-xl font-bold text-blue-600 mb-8 animate-fade-in"
         >
           Welcome, {user?.name}!
         </motion.h3>

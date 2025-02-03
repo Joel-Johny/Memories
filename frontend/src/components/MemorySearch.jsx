@@ -5,7 +5,7 @@ const MemorySearch = ({ searchQuery, setSearchQuery, setShowCalendar }) => {
   const navigate = useNavigate();
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-6">
-      <div className="relative flex-1 min-w-0">
+      {/* <div className="relative flex-1 min-w-0">
         <input
           type="text"
           placeholder="Search Memory by Title..."
@@ -13,7 +13,7 @@ const MemorySearch = ({ searchQuery, setSearchQuery, setShowCalendar }) => {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full pl-4 pr-10 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
         />
-      </div>
+      </div> */}
 
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <button
