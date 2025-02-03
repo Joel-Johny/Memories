@@ -14,10 +14,12 @@ import {
   getJournalMetrics,
   getPaginatedJournal,
 } from "../api";
-import { useNavigate } from "react-router-dom"; // Assuming you're using React Router
+import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { useAuth } from "../context/AuthContext";
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [showCalendar, setShowCalendar] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [journalDates, setJournalDates] = useState([]);
@@ -56,6 +58,14 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50">
       {isLoading && <LoadingSpinner />}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome user */}
+        <motion.h3
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-xl font-bold text-blue-600 mb-8 animate-fade-in text-right"
+        >
+          Welcome, {user?.name}!
+        </motion.h3>
         {/* Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Total Memories */}
