@@ -36,7 +36,7 @@ export default function Dashboard() {
     const metrics = await getJournalMetrics();
     setMetrics(metrics);
     setJournalDates(dates);
-    if (dates.length > 0) fetchJournals();
+    if (dates.length > 0) await fetchJournals();
     setIsLoading(false);
   };
 
@@ -54,6 +54,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {isLoading && <LoadingSpinner />}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
