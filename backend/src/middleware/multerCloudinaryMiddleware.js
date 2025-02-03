@@ -12,7 +12,7 @@ cloudinary.config({
 });
 
 // Ensure the uploads directory exists
-const uploadDir = path.join(__dirname, "../../tmp/uploads");
+const uploadDir = path.join(__dirname, "../../tmp");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
