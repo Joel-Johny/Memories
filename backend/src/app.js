@@ -21,7 +21,7 @@ app.use(express.urlencoded({ extended: true })); // Parse incoming URL-encoded f
 // Connect to MongoDB
 connectDB();
 // Basic Route
-app.get("/test-get-data", (req, res) => {
+app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
