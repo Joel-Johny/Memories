@@ -2,7 +2,7 @@
   "name": "memories",
   "version": "1.0.0",
   "description": "This is the backend of the memories project",
-  "main": "./src/app.js",
+  "main": "./app.js",
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js"
