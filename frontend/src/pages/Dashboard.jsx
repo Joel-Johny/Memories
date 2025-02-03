@@ -15,7 +15,7 @@ import {
   getPaginatedJournal,
 } from "../api";
 import { useNavigate } from "react-router-dom"; // Assuming you're using React Router
-
+import LoadingSpinner from "../components/LoadingSpinner";
 export default function Dashboard() {
   const navigate = useNavigate();
   const [showCalendar, setShowCalendar] = useState(false);
@@ -24,7 +24,7 @@ export default function Dashboard() {
   const [metrics, setMetrics] = useState({});
   const [journals, setJournals] = useState([]);
   const [hasMore, setHasMore] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch dashboard data (metrics, dates, and journals)
   useEffect(() => {
@@ -37,11 +37,11 @@ export default function Dashboard() {
     setMetrics(metrics);
     setJournalDates(dates);
     if (dates.length > 0) fetchJournals();
+    setIsLoading(false);
   };
 
   // Fetch paginated journals
   const fetchJournals = async (skip = 0) => {
-    setIsLoading(true);
     try {
       const { journals: newJournals, hasMore: moreJournalsExist } =
         await getPaginatedJournal(skip);
@@ -49,8 +49,6 @@ export default function Dashboard() {
       setHasMore(moreJournalsExist);
     } catch (error) {
       console.error("Error fetching journals:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -160,7 +158,11 @@ export default function Dashboard() {
               {/* Load More Button */}
               {hasMore && (
                 <button
-                  onClick={() => fetchJournals(journals.length)}
+                  onClick={async () => {
+                    setIsLoading(true);
+                    await fetchJournals(journals.length);
+                    setIsLoading(false);
+                  }}
                   disabled={isLoading}
                   className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-lg disabled:bg-gray-400"
                 >
