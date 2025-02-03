@@ -5,6 +5,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 const fs = require("fs");
 
+// Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -12,9 +13,11 @@ cloudinary.config({
 });
 
 // Ensure the uploads directory exists
-const uploadDir = path.join(__dirname, "../../tmp");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
+const uploadDir =
+  process.env.VERCEL === "1" ? "/tmp" : path.join(__dirname, "../../uploads");
+// console.log(uploadDir, "vercel env", process.env.VERCEL);
+if (process.env.VERCEL === "0" && !fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -29,6 +32,7 @@ const storage = multer.diskStorage({
   },
 });
 
+// Multer Upload Middleware
 const upload = multer({
   storage: storage,
   fileFilter: (req, file, cb) => {
@@ -45,9 +49,7 @@ const upload = multer({
       cb(new Error("Invalid file type"), false);
     }
   },
-  limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB file size limit
-  },
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB file size limit
 }).fields([
   { name: "thumbnail", maxCount: 1 },
   { name: "snapPhotos", maxCount: 5 },
