@@ -1,5 +1,3 @@
-Here is your updated README file based on the provided details and the correct folder structure:
-
 ---
 
 # Memories - MERN Stack Project 🌟
