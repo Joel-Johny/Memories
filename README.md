@@ -1,4 +1,4 @@
----
+
 
 # Memories - MERN Stack Project 🌟
 
@@ -108,9 +108,6 @@ VITE_BACKEND_URL=<backend-url>
   ```bash
   npm run dev
   ```
-
-### 5. Access the application
-Open your browser and navigate to `http://localhost:3000`.
 
 ---
 
