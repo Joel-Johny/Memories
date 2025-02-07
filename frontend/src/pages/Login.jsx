@@ -5,8 +5,8 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("testuser@gmail.com");
+  const [password, setPassword] = useState("testuser@123");
   const [error, setError] = useState("");
   const { login, user } = useAuth();
   const [loading, setLoading] = useState(false);
