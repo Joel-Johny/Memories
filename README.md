@@ -1,51 +1,50 @@
+
+
 # Memories - MERN Stack Project 🌟
 
-**Memories** is a dynamic journaling application built with the MERN stack (MongoDB, Express, React, Node.js). This platform allows users to log their daily experiences, express their thoughts, and capture memories in multiple formats.
+**Memories** is a dynamic journaling application built with the MERN stack (MongoDB, Express, React, Node.js). This platform allows users to log their daily experiences, express their thoughts, and capture memories in multiple formats, including multimedia.
 
 ---
 
 ## Features
 
 - **User Authentication**
-
-  - Secure login and signup with JWT-based authentication.
-
+  - Secure JWT-based login and signup with email verification using Nodemailer.
+  
 - **Daily Journals**
-
   - Write and save your daily thoughts and activities.
-
-- **Media Attachments**
-
-  - Upload and attach photos or videos to your journal entries.
-
+  
+- **Multimedia Support**
+  - Upload and attach photos, videos, or other media files to your journal entries.
+  - Manage media efficiently with Cloudinary integration.
+  
 - **Video Recording**
-
-  - Record videos directly within the app for a more personalized touch.
-
+  - Record videos directly within the app for a personalized touch.
+  
 - **Responsive Design**
-  - Fully responsive interface, optimized for all devices.
+  - Fully responsive interface optimized for devices of all sizes.
 
 ---
 
 ## Tech Stack
 
 ### Frontend
-
-- **ReactJS**: Build the user interface.
-- **Tailwind CSS**: Style the application for a modern look and feel.
+- **ReactJS**: For building the user interface.
+- **Vite**: For a fast development environment.
+- **Tailwind CSS**: For a sleek and modern UI.
 
 ### Backend
-
-- **Node.js**: Handle server-side logic.
-- **Express**: Set up RESTful APIs and routing.
+- **Node.js**: To handle server-side logic.
+- **Express.js**: To set up RESTful APIs and routing.
 
 ### Database
-
-- **MongoDB**: Store user data and journal entries.
+- **MongoDB**: For storing user data and journal entries.
 
 ### Authentication
+- **JWT**: Secure authentication mechanism with expiring tokens.
 
-- **JWT**: Secure authentication mechanism.
+### Cloud Services
+- **Cloudinary**: For media management (upload, thumbnails, and cleanup).
 
 ---
 
@@ -53,91 +52,108 @@
 
 Follow these steps to set up the project on your local machine:
 
-1. **Clone the repository**:
+### 1. Clone the repository
 
-   ```bash
-   git clone https://github.com/your-username/journal-hub.git
-   cd journal-hub
-   ```
+```bash
+git clone https://github.com/Joel-Johny/Memories.git
+cd Memories
+```
 
-2. **Install dependencies**:
+### 2. Install dependencies
 
-   - For the backend:
-     ```bash
-     cd backend
-     npm install
-     ```
-   - For the frontend:
-     ```bash
-     cd frontend
-     npm install
-     ```
+- Backend:
+  ```bash
+  cd backend
+  npm install
+  ```
+- Frontend:
+  ```bash
+  cd frontend
+  npm install
+  ```
 
-3. **Environment Variables**:
+### 3. Add Environment Variables
 
-   - Create a `.env` file in the `backend` directory with the following variables:
-     ```env
-     MONGO_URI=<your-mongodb-connection-string>
-     JWT_SECRET=<your-jwt-secret>
-     ```
+Create `.env` files in the respective directories:
 
-4. **Start the development servers**:
+#### Backend (`backend/.env`)
+```env
+PORT=<your-port>
+VERCEL=<your-vercel-url>
+CLIENT_URL=<frontend-url>
+MONGO_URI=<your-mongodb-uri>
+CLOUDINARY_CLOUD_NAME=<your-cloudinary-cloud-name>
+CLOUDINARY_API_KEY=<your-cloudinary-api-key>
+CLOUDINARY_API_SECRET=<your-cloudinary-api-secret>
+JWT_SECRET=<your-jwt-secret>
+EMAIL_SERVICE=<email-service>
+EMAIL_HOST=<email-host>
+EMAIL_PORT=<email-port>
+EMAIL_USER=<email-user>
+EMAIL_PASSWORD=<email-password>
+```
 
-   - Backend:
-     ```bash
-     npm run dev
-     ```
-   - Frontend:
-     ```bash
-     npm start
-     ```
+#### Frontend (`frontend/.env`)
+```env
+VITE_BACKEND_URL=<backend-url>
+```
 
-5. **Access the application**:
-   - Open your browser and navigate to `http://localhost:3000`.
+### 4. Start the development servers
+
+- Backend:
+  ```bash
+  npm run dev
+  ```
+- Frontend:
+  ```bash
+  npm run dev
+  ```
 
 ---
 
 ## Folder Structure
 
 ```
-journal-hub/
-  |-- backend/
-  |    |-- models/
-  |    |-- routes/
-  |    |-- controllers/
-  |    |-- server.js
-  |    |-- .env
-  |
-  |-- frontend/
-  |    |-- src/
-  |         |-- components/
-  |         |-- pages/
-  |         |-- App.js
-  |    |-- public/
-  |
-  |-- README.md
+Memories/
+  ├── backend/
+  │   ├── node_modules/
+  │   ├── src/
+  │   │   ├── controllers/
+  │   │   ├── routes/
+  │   │   ├── models/
+  │   │   └── uploads/
+  │   ├── .env
+  │   ├── package.json
+  │   ├── package-lock.json
+  │   └── vercel.json
+  ├── frontend/
+  │   ├── dist/
+  │   ├── node_modules/
+  │   ├── public/
+  │   ├── src/
+  │   │   ├── components/
+  │   │   ├── pages/
+  │   │   └── App.js
+  │   ├── .env
+  │   ├── package.json
+  │   ├── package-lock.json
+  │   ├── tailwind.config.js
+  │   ├── postcss.config.js
+  │   ├── vite.config.js
+  │   └── vercel.json
+  ├── .gitignore
+  ├── README.md
+  └── LICENSE
 ```
 
 ---
 
-## Contributing
+## Contact
 
-Contributions are welcome! If you find a bug or have an idea for improvement, feel free to fork the repository and submit a pull request.
+For any inquiries or support, feel free to reach out:
 
----
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
-
----
-
-### Contact
-
-For any inquiries or support, please contact:
-
-- **Email**: your-email@example.com
-- **GitHub**: [your-username](https://github.com/your-username)
+- **Email**: joelj088m@gmail.com
+- **GitHub**: [Joel-Johny](https://github.com/Joel-Johny)
 
 ---
 
