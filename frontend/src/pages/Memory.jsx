@@ -36,7 +36,7 @@ const Memory = () => {
     if (searchDate) {
       loadJournal();
     }
-  }, []);
+  }, [searchDate]);
   const loadJournal = async () => {
     try {
       setLoading(true);
